@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  row: 1
+  number: 1
+  status: MyString
+  hall: one
+
+two:
+  row: 1
+  number: 1
+  status: MyString
+  hall: two
