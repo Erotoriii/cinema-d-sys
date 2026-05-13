@@ -1,0 +1,26 @@
+<%= form_with(model: hall, local: true) do |form| %>
+  <% if hall.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(hall.errors.count, "error") %> prohibited this hall from being saved:</h2>
+      <ul>
+        <% hall.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :name %>
+    <%= form.text_field :name, required: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :cinema_id %>
+    <%= form.collection_select :cinema_id, Cinema.all, :id, :name, { prompt: "Select a cinema" }, { required: true } %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit %>
+  </div>
+<% end %>

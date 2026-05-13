@@ -1,0 +1,30 @@
+<h1>Halls</h1>
+
+<%= link_to "Add New Hall", new_hall_path, class: "btn btn-primary" %>
+
+<% if @halls.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Cinema</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @halls.each do |hall| %>
+        <tr>
+          <td><%= hall.name %></td>
+          <td><%= hall.cinema&.name %></td>
+          <td>
+            <%= link_to "Show", hall_path(hall) %>
+            <%= link_to "Edit", edit_hall_path(hall) %>
+            <%= link_to "Delete", hall_path(hall), method: :delete, data: { confirm: "Are you sure?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No halls found.</p>
+<% end %>

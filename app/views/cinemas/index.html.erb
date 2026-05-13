@@ -1,0 +1,32 @@
+<h1>Cinemas</h1>
+
+<%= link_to "Add New Cinema", new_cinema_path, class: "btn btn-primary" %>
+
+<% if @cinemas.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Address</th>
+        <th>Company</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @cinemas.each do |cinema| %>
+        <tr>
+          <td><%= cinema.name %></td>
+          <td><%= cinema.address %></td>
+          <td><%= cinema.company&.name %></td>
+          <td>
+            <%= link_to "Show", cinema_path(cinema) %>
+            <%= link_to "Edit", edit_cinema_path(cinema) %>
+            <%= link_to "Delete", cinema_path(cinema), method: :delete, data: { confirm: "Are you sure?" } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No cinemas found.</p>
+<% end %>

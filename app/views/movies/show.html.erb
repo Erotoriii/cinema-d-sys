@@ -1,0 +1,24 @@
+<h1><%= @movie.title %></h1>
+
+<div class="movie-details">
+  <p>
+    <strong>Duration:</strong>
+    <%= @movie.duration %> minutes
+  </p>
+
+  <p>
+    <strong>Description:</strong>
+    <%= simple_format(@movie.description) %>
+  </p>
+
+  <p>
+    <strong>Created at:</strong>
+    <%= @movie.created_at.strftime("%B %d, %Y") %>
+  </p>
+</div>
+
+<div class="actions">
+  <%= link_to "Edit", edit_movie_path(@movie), class: "btn btn-secondary" %>
+  <%= link_to "Delete", movie_path(@movie), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger" %>
+  <%= link_to "Back to Movies", movies_path, class: "btn btn-secondary" %>
+</div>

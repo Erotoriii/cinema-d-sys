@@ -1,0 +1,31 @@
+<%= form_with(model: cinema, local: true) do |form| %>
+  <% if cinema.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(cinema.errors.count, "error") %> prohibited this cinema from being saved:</h2>
+      <ul>
+        <% cinema.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :name %>
+    <%= form.text_field :name, required: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :address %>
+    <%= form.text_field :address, required: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :company_id %>
+    <%= form.collection_select :company_id, Company.all, :id, :name, { prompt: "Select a company" }, { required: true } %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit %>
+  </div>
+<% end %>

@@ -1,0 +1,19 @@
+<h1><%= @hall.name %></h1>
+
+<div class="hall-details">
+  <p>
+    <strong>Cinema:</strong>
+    <%= link_to @hall.cinema&.name, cinema_path(@hall.cinema) if @hall.cinema %>
+  </p>
+
+  <p>
+    <strong>Created at:</strong>
+    <%= @hall.created_at.strftime("%B %d, %Y") %>
+  </p>
+</div>
+
+<div class="actions">
+  <%= link_to "Edit", edit_hall_path(@hall), class: "btn btn-secondary" %>
+  <%= link_to "Delete", hall_path(@hall), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger" %>
+  <%= link_to "Back to Halls", halls_path, class: "btn btn-secondary" %>
+</div>
