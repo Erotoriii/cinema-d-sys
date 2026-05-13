@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_13_111730) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_13_112455) do
   create_table "cinemas", force: :cascade do |t|
     t.string "address"
     t.integer "company_id", null: false
@@ -53,6 +53,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_111730) do
     t.integer "sold_amount"
     t.datetime "updated_at", null: false
     t.index ["cinema_id"], name: "index_products_on_cinema_id"
+  end
+
+  create_table "reports", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "status"
+    t.datetime "updated_at", null: false
+    t.integer "workday_id", null: false
+    t.index ["workday_id"], name: "index_reports_on_workday_id"
   end
 
   create_table "seats", force: :cascade do |t|
@@ -102,12 +110,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_111730) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  create_table "workdays", force: :cascade do |t|
+    t.integer "cinema_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "end_time"
+    t.datetime "start_time"
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["cinema_id"], name: "index_workdays_on_cinema_id"
+    t.index ["user_id"], name: "index_workdays_on_user_id"
+  end
+
   add_foreign_key "cinemas", "companies"
   add_foreign_key "halls", "cinemas"
   add_foreign_key "products", "cinemas"
+  add_foreign_key "reports", "workdays"
   add_foreign_key "seats", "halls"
   add_foreign_key "showtimes", "halls"
   add_foreign_key "showtimes", "movies"
   add_foreign_key "tickets", "seats"
   add_foreign_key "tickets", "showtimes"
+  add_foreign_key "workdays", "cinemas"
+  add_foreign_key "workdays", "users"
 end
