@@ -19,6 +19,6 @@
 
 <div class="actions">
   <%= link_to "Edit", edit_cinema_path(@cinema), class: "btn btn-secondary" %>
-  <%= link_to "Delete", cinema_path(@cinema), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger" %>
+  <%= link_to "Delete", cinema_path(@cinema), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "btn btn-danger" %>
   <%= link_to "Back to Cinemas", cinemas_path, class: "btn btn-secondary" %>
 </div>

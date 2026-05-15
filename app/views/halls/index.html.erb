@@ -19,7 +19,7 @@
           <td>
             <%= link_to "Show", hall_path(hall) %>
             <%= link_to "Edit", edit_hall_path(hall) %>
-            <%= link_to "Delete", hall_path(hall), method: :delete, data: { confirm: "Are you sure?" } %>
+            <%= link_to "Delete", hall_path(hall), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" } %>
           </td>
         </tr>
       <% end %>

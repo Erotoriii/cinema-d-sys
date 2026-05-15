@@ -1,19 +1,196 @@
-<h1><%= @hall.name %></h1>
+<style>
+  .hall-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+  }
 
-<div class="hall-details">
-  <p>
-    <strong>Cinema:</strong>
-    <%= link_to @hall.cinema&.name, cinema_path(@hall.cinema) if @hall.cinema %>
-  </p>
+  .hall-details {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+  }
 
-  <p>
-    <strong>Created at:</strong>
-    <%= @hall.created_at.strftime("%B %d, %Y") %>
-  </p>
-</div>
+  .cinema-map {
+    text-align: center;
+    background-color: #f9f9f9;
+    padding: 30px;
+    border-radius: 8px;
+    margin: 30px 0;
+  }
 
-<div class="actions">
-  <%= link_to "Edit", edit_hall_path(@hall), class: "btn btn-secondary" %>
-  <%= link_to "Delete", hall_path(@hall), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger" %>
-  <%= link_to "Back to Halls", halls_path, class: "btn btn-secondary" %>
+  .screen {
+    width: 100%;
+    height: 40px;
+    background: linear-gradient(90deg, #333 0%, #555 50%, #333 100%);
+    border-radius: 50% 50% 0 0;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .seating-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .row-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .row-label {
+    font-weight: bold;
+    min-width: 40px;
+    text-align: right;
+    font-size: 14px;
+    color: #333;
+  }
+
+  .row-seats {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .seat {
+    width: 30px;
+    height: 30px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .seat.available {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #45a049;
+  }
+
+  .seat.available:hover {
+    background-color: #45a049;
+    transform: scale(1.1);
+  }
+
+  .seat.reserved {
+    background-color: #f44336;
+    color: white;
+    border-color: #da190b;
+    cursor: not-allowed;
+  }
+
+  .seat.sold {
+    background-color: #999;
+    color: white;
+    border-color: #666;
+    cursor: not-allowed;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+    font-size: 13px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-seat {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ccc;
+    border-radius: 3px;
+  }
+
+  .actions {
+    margin-top: 30px;
+    text-align: center;
+  }
+</style>
+
+<div class="hall-container">
+  <h1><%= @hall.name %></h1>
+
+  <div class="hall-details">
+    <p>
+      <strong>Cinema:</strong>
+      <%= link_to @hall.cinema&.name, cinema_path(@hall.cinema) if @hall.cinema %>
+    </p>
+
+    <p>
+      <strong>Configuration:</strong>
+      <%= @hall.rows %> rows × <%= @hall.seats_per_row %> seats per row
+    </p>
+
+    <p>
+      <strong>Total Seats:</strong>
+      <%= @hall.seats.count %>
+    </p>
+
+    <p>
+      <strong>Created at:</strong>
+      <%= @hall.created_at.strftime("%B %d, %Y") %>
+    </p>
+  </div>
+
+  <div class="cinema-map">
+    <div class="screen">SCREEN</div>
+
+    <div class="seating-chart">
+      <% @hall.seats.group_by(&:row).sort.each do |row_num, seats| %>
+        <div class="row-container">
+          <div class="row-label">Row <%= row_num %></div>
+          <div class="row-seats">
+            <% seats.sort_by(&:number).each do |seat| %>
+              <div class="seat <%= seat.status %>" title="Row <%= seat.row %>, Seat <%= seat.number %>">
+                <%= seat.number %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-seat" style="background-color: #4CAF50; border-color: #45a049;"></div>
+        <span>Available</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-seat" style="background-color: #f44336; border-color: #da190b;"></div>
+        <span>Reserved</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-seat" style="background-color: #999; border-color: #666;"></div>
+        <span>Sold</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <%= link_to "Edit", edit_hall_path(@hall), class: "btn btn-secondary" %>
+    <%= link_to "Delete", hall_path(@hall), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "btn btn-danger" %>
+    <%= link_to "Back to Halls", halls_path, class: "btn btn-secondary" %>
+  </div>
 </div>

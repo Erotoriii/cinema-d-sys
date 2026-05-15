@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_13_112455) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_15_103328) do
   create_table "cinemas", force: :cascade do |t|
     t.string "address"
     t.integer "company_id", null: false
@@ -30,6 +30,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_112455) do
     t.integer "cinema_id", null: false
     t.datetime "created_at", null: false
     t.string "name"
+    t.integer "rows"
+    t.integer "seats_per_row"
     t.datetime "updated_at", null: false
     t.index ["cinema_id"], name: "index_halls_on_cinema_id"
   end

@@ -1,6 +1,6 @@
 class HallsController < ApplicationController
   before_action :set_hall, only: [:show, :edit, :update, :destroy]
-
+  before_action :authorize_manager!
   # GET /halls
   def index
     @halls = Hall.all
@@ -51,6 +51,6 @@ class HallsController < ApplicationController
   end
 
   def hall_params
-    params.require(:hall).permit(:name, :cinema_id)
+    params.require(:hall).permit(:name, :cinema_id, :rows, :seats_per_row)
   end
 end

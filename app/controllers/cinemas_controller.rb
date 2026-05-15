@@ -1,6 +1,6 @@
 class CinemasController < ApplicationController
   before_action :set_cinema, only: [:show, :edit, :update, :destroy]
-
+  before_action :authorize_admin!
   # GET /cinemas
   def index
     @cinemas = Cinema.all

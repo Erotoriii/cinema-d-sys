@@ -20,6 +20,16 @@
     <%= form.collection_select :cinema_id, Cinema.all, :id, :name, { prompt: "Select a cinema" }, { required: true } %>
   </div>
 
+  <div class="field">
+    <%= form.label :rows %>
+    <%= form.number_field :rows, required: true, min: 1 %>
+  </div>
+
+  <div class="field">
+    <%= form.label :seats_per_row %>
+    <%= form.number_field :seats_per_row, required: true, min: 1 %>
+  </div>
+
   <div class="actions">
     <%= form.submit %>
   </div>
