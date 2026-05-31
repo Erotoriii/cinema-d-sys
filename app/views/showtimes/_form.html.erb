@@ -1,0 +1,31 @@
+<%= form_with(model: showtime, local: true) do |form| %>
+  <% if showtime.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(showtime.errors.count, "error") %> prohibited this showtime from being saved:</h2>
+      <ul>
+        <% showtime.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :movie_id %>
+    <%= form.collection_select :movie_id, Movie.where(deleted_at: nil), :id, :title, { prompt: "Select a movie" }, { required: true } %>
+  </div>
+
+  <div class="field">
+    <%= form.label :hall_id %>
+    <%= form.collection_select :hall_id, Hall.all, :id, :name, { prompt: "Select a hall" }, { required: true } %>
+  </div>
+
+  <div class="field">
+    <%= form.label :start_time %>
+    <%= form.datetime_field :start_time, required: true %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit %>
+  </div>
+<% end %>

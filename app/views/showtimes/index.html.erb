@@ -1,0 +1,40 @@
+<h1>Showtimes Schedule</h1>
+
+<% if user_signed_in? && current_user.admin_or_manager? %>
+  <%= link_to "Add New Showtime", new_showtime_path, class: "btn btn-primary" %>
+<% end %>
+
+<% if @showtimes.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Movie Title</th>
+        <th>Hall Name</th>
+        <th>Cinema</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @showtimes.each do |showtime| %>
+        <tr>
+          <td><%= showtime.start_time.strftime("%B %d, %Y") %></td>
+          <td><%= showtime.start_time.strftime("%H:%M") %></td>
+          <td><%= showtime.movie&.title %></td>
+          <td><%= showtime.hall&.name %></td>
+          <td><%= showtime.hall&.cinema&.name %></td>
+          <td>
+            <%= link_to "Show", showtime_path(showtime) %>
+            <% if user_signed_in? && current_user.admin_or_manager? %>
+              <%= link_to "Edit", edit_showtime_path(showtime) %>
+              <%= button_to "Delete", showtime_path(showtime), method: :delete, data: { turbo_confirm: "Are you sure?" }, form: { style: "display:inline;" } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No showtimes scheduled yet.</p>
+<% end %>
