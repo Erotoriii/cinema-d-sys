@@ -1,14 +1,14 @@
 class Hall < ApplicationRecord
   belongs_to :cinema
   has_many :seats, dependent: :destroy
+  has_many :showtimes, dependent: :destroy
 
-  # Validate that rows and seats_per_row are present
   validates :rows, :seats_per_row, presence: true, numericality: { greater_than: 0 }
+  validates :name, presence: true
+  validates :cinema_id, presence: true
 
-  # After creating a hall, generate seats
   after_create :generate_seats
 
-  # When updating, regenerate seats if dimensions changed
   before_update :mark_seats_for_regeneration
   after_update :regenerate_seats_if_needed
 
@@ -31,7 +31,6 @@ class Hall < ApplicationRecord
   def regenerate_seats_if_needed
     return unless @should_regenerate_seats
 
-    # Delete old seats and generate new ones
     seats.destroy_all
     generate_seats
   end
