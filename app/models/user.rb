@@ -1,7 +1,8 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
-
+         
+  belongs_to :company, optional: true
   belongs_to :cinema, optional: true
   has_many :workdays, dependent: :destroy
 

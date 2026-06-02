@@ -35,7 +35,7 @@
               <td style="padding: 15px; color: #2c3e50;"><%= user.created_at.strftime("%B %d, %Y") %></td>
               <td style="padding: 15px; text-align: center;">
                 <%= link_to "Edit", edit_user_path(user), style: "margin-right: 10px; color: #3498db; text-decoration: none;" %>
-                <%= link_to "Delete", user_path(user), method: :delete, data: { confirm: "Are you sure?" }, style: "color: #e74c3c; text-decoration: none;" %>
+                <%= link_to "Delete", user_path(user), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, style: "color: #e74c3c; text-decoration: none; cursor: pointer;" %>
               </td>
             </tr>
           <% end %>

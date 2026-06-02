@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_02_115543) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_02_150246) do
   create_table "cinemas", force: :cascade do |t|
     t.string "address"
     t.integer "company_id", null: false
@@ -22,6 +22,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_115543) do
 
   create_table "companies", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "domain_prefix"
     t.string "name"
     t.datetime "updated_at", null: false
   end
@@ -37,12 +38,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_115543) do
   end
 
   create_table "movies", force: :cascade do |t|
+    t.integer "company_id"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.text "description"
     t.integer "duration"
     t.string "title"
     t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_movies_on_company_id"
     t.index ["deleted_at"], name: "index_movies_on_deleted_at"
   end
 
@@ -100,6 +103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_115543) do
 
   create_table "users", force: :cascade do |t|
     t.integer "cinema_id"
+    t.integer "company_id"
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -110,6 +114,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_115543) do
     t.string "role"
     t.datetime "updated_at", null: false
     t.index ["cinema_id"], name: "index_users_on_cinema_id"
+    t.index ["company_id"], name: "index_users_on_company_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -127,6 +132,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_115543) do
 
   add_foreign_key "cinemas", "companies"
   add_foreign_key "halls", "cinemas"
+  add_foreign_key "movies", "companies"
   add_foreign_key "products", "cinemas"
   add_foreign_key "reports", "workdays"
   add_foreign_key "seats", "halls"
@@ -136,6 +142,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_115543) do
   add_foreign_key "tickets", "showtimes"
   add_foreign_key "tickets", "workdays"
   add_foreign_key "users", "cinemas", on_delete: :nullify
+  add_foreign_key "users", "companies"
   add_foreign_key "workdays", "cinemas"
   add_foreign_key "workdays", "users"
 end
