@@ -3,9 +3,9 @@ class HallsController < ApplicationController
   before_action :authorize_manager!
   # GET /halls
   def index
-    @halls = Hall.all
+    @halls = Hall.where(cinema_id: current_user.company.cinema_ids)
   end
-
+# Fetch all halls where cinema_id is in current_user.company.cinema_ids
   # GET /halls/:id
   def show
   end
@@ -18,6 +18,7 @@ class HallsController < ApplicationController
   # POST /halls
   def create
     @hall = Hall.new(hall_params)
+    @hall.cinema_id = current_user.company.cinema_ids.first  # Ensure the new hall is associated with the current user's company's first cinema               
     if @hall.save
       redirect_to @hall, notice: "Hall was successfully created."
     else

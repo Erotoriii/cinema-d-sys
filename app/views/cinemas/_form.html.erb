@@ -20,11 +20,6 @@
     <%= form.text_field :address, required: true %>
   </div>
 
-  <div class="field">
-    <%= form.label :company_id %>
-    <%= form.collection_select :company_id, Company.all, :id, :name, { prompt: "Select a company" }, { required: true } %>
-  </div>
-
   <div class="actions">
     <%= form.submit %>
   </div>

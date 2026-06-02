@@ -9,8 +9,10 @@ class ShowtimesController < ApplicationController
       @showtimes = Showtime.joins(:hall).where(halls: { cinema_id: current_workday.cinema_id })
                            .includes(:movie, :hall).order(:start_time)
     elsif current_user.admin_or_manager?
-      # Admins and managers can see all showtimes
-      @showtimes = Showtime.includes(:movie, :hall).order(:start_time)
+      # Admins and managers can see all showtimes ONLY FOR THEIR COMPANY
+      @showtimes = Showtime.joins(:hall)
+                           .where(halls: { cinema_id: current_user.company.cinema_ids })
+                           .includes(:movie, :hall).order(:start_time)
     else
       # Staff without active shift cannot view showtimes
       @showtimes = []

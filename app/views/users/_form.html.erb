@@ -30,6 +30,11 @@
     </div>
   </div>
 
+  <div id="staff_cinema_field" style="margin-bottom: 15px; display: none;">
+    <%= form.label :cinema_id, "Домашній кінотеатр (Місце роботи)" %><br>
+    <%= form.collection_select :cinema_id, current_user.company.cinemas, :id, :name, { prompt: "Оберіть кінотеатр..." }, { style: "padding: 5px; width: 250px;" } %>
+  </div>
+
   <div style="margin-bottom: 15px;">
     <%= form.label :password, "Пароль" %><br>
     <%= form.password_field :password, style: "padding: 5px; width: 250px;" %>
@@ -46,25 +51,28 @@
 <% end %>
 
 <script>
-  // Простий JS для перемикання полів залежно від вибраної ролі
+  // Оновлений JS для перемикання всіх трьох полів
   document.addEventListener("turbo:load", function() {
     const roleSelect = document.getElementById("role_select");
     const adminField = document.getElementById("admin_email_field");
     const staffField = document.getElementById("staff_username_field");
+    const cinemaField = document.getElementById("staff_cinema_field"); // Оголосили поле кінотеатру
 
     function toggleFields() {
       if (roleSelect.value === "admin") {
         adminField.style.display = "block";
         staffField.style.display = "none";
+        cinemaField.style.display = "none";    // Ховаємо кінотеатр для Адміна
       } else {
         adminField.style.display = "none";
         staffField.style.display = "flex";
+        cinemaField.style.display = "block";   // Показуємо кінотеатр для Касира/Менеджера
       }
     }
 
     if (roleSelect) {
       roleSelect.addEventListener("change", toggleFields);
-      toggleFields(); // Запускаємо при завантаженні
+      toggleFields(); // Перевіряємо роль одразу при завантаженні сторінки
     }
   });
 </script>

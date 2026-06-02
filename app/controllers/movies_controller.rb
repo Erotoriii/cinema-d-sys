@@ -3,7 +3,7 @@ class MoviesController < ApplicationController
   before_action :authorize_movie_access!, only: [:new, :create, :edit, :update, :destroy]
   # GET /movies
   def index
-    @movies = Movie.where(deleted_at: nil)
+    @movies = Movie.where(company_id: current_user.company_id, deleted_at: nil)
   end
 
   # GET /movies/:id
@@ -16,8 +16,12 @@ class MoviesController < ApplicationController
   end
 
   # POST /movies
+  # 1. Initialize movie with movie_params.
+  # 2. Assign current_user's company_id to the new movie.
+  # 3. Save the movie. If successful, redirect to @movie with a notice. Else, render :new.      
   def create
     @movie = Movie.new(movie_params)
+    @movie.company_id = current_user.company_id  # Ensure the new movie is associated with the current user's company
     if @movie.save
       redirect_to @movie, notice: "Movie was successfully created."
     else

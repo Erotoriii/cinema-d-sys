@@ -2,8 +2,9 @@ class CinemasController < ApplicationController
   before_action :set_cinema, only: [:show, :edit, :update, :destroy]
   before_action :authorize_admin!
   # GET /cinemas
+  # Fetch all cinemas where company_id matches current_user.company_id
   def index
-    @cinemas = Cinema.all
+    @cinemas = Cinema.where(company_id: current_user.company_id)
   end
 
   # GET /cinemas/:id
@@ -15,11 +16,13 @@ class CinemasController < ApplicationController
     @cinema = Cinema.new
   end
 
+  # Assign current_user's company_id to this record before saving       
   # POST /cinemas
   def create
     @cinema = Cinema.new(cinema_params)
+    @cinema.company_id = current_user.company_id
     if @cinema.save
-      redirect_to @cinema, notice: "Cinema was successfully created."
+      redirect_to @cinema, notice: 'Кінотеатр успішно створено.'
     else
       render :new, status: :unprocessable_entity
     end
@@ -51,6 +54,6 @@ class CinemasController < ApplicationController
   end
 
   def cinema_params
-    params.require(:cinema).permit(:name, :address, :company_id)
+    params.require(:cinema).permit(:name, :address)
   end
 end

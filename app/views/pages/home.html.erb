@@ -140,7 +140,7 @@
     <%= form_with url: workdays_path, local: true, method: :post, scope: :workday do |f| %>
       <div class="form-group">
         <%= f.label :cinema_id, "Select Cinema" %>
-        <%= f.collection_select :cinema_id, Cinema.all, :id, :name, { prompt: "Choose a cinema" } %>
+        <%= f.collection_select :cinema_id, Cinema.where(company_id: current_user.company_id), :id, :name, { prompt: "Choose a cinema" } %>
       </div>
 
       <div class="button-group">

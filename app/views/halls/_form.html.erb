@@ -17,7 +17,7 @@
 
   <div class="field">
     <%= form.label :cinema_id %>
-    <%= form.collection_select :cinema_id, Cinema.all, :id, :name, { prompt: "Select a cinema" }, { required: true } %>
+    <%= form.collection_select :cinema_id, Cinema.where(company_id: current_user.company_id), :id, :name, { prompt: "Select a cinema" }, { required: true } %>
   </div>
 
   <div class="field">
