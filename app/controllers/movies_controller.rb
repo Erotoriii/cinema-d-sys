@@ -1,6 +1,6 @@
 class MoviesController < ApplicationController
   before_action :set_movie, only: [:show, :edit, :update, :destroy]
-  before_action :authorize_manager!, except: [:index, :show]
+  before_action :authorize_movie_access!, only: [:new, :create, :edit, :update, :destroy]
   # GET /movies
   def index
     @movies = Movie.where(deleted_at: nil)

@@ -8,6 +8,9 @@ Rails.application.routes.draw do
   resources :cinemas
   resources :halls
   resources :showtimes
+  resources :workdays, only: [:create, :update]
+  resources :tickets, only: [:new, :create, :show, :edit, :update, :destroy]
+  resources :users, path: 'staff'
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -22,3 +25,5 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 end
+
+

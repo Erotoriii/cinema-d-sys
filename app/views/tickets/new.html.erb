@@ -1,0 +1,393 @@
+<style>
+  .tickets-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .booking-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #ddd;
+  }
+
+  .booking-header h1 {
+    margin: 0 0 1rem 0;
+    font-size: 2rem;
+    color: #333;
+  }
+
+  .movie-info {
+    margin-top: 1rem;
+  }
+
+  .movie-info h2 {
+    margin: 0.5rem 0;
+    font-size: 1.5rem;
+    color: #555;
+  }
+
+  .movie-info p {
+    margin: 0.25rem 0;
+    font-size: 1rem;
+    color: #777;
+  }
+
+  .screen-container {
+    text-align: center;
+    margin: 2rem 0;
+  }
+
+  .screen {
+    display: inline-block;
+    background: linear-gradient(to bottom, #ccc, #999);
+    color: #333;
+    padding: 1rem 4rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    border-radius: 8px 8px 0 0;
+    width: 80%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .seat-map {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+  }
+
+  .seat-grid {
+    display: grid;
+    padding: 2rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+
+  .seat-label {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #4caf50;
+    color: white;
+    border-color: #45a049;
+  }
+
+  .seat-label:hover:not(.seat-sold) {
+    background-color: #45a049;
+    transform: scale(1.1);
+  }
+
+  .seat-label:active:not(.seat-sold) {
+    transform: scale(0.95);
+  }
+
+  .seat-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .seat-label input[type="checkbox"]:checked + .seat-text {
+    background-color: #2196F3;
+    border-color: #0b7dda;
+  }
+
+  .seat-label.seat-status-sold {
+    background-color: #f44336;
+    color: white;
+    border-color: #da190b;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
+  .seat-label.seat-status-sold:hover {
+    background-color: #f44336;
+    opacity: 1;
+    transform: none;
+  }
+
+  .seat-label.seat-status-pending {
+    background-color: #ff9800;
+    color: white;
+    border-color: #e65100;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
+  .seat-label.seat-status-pending:hover {
+    background-color: #ff9800;
+    opacity: 1;
+    transform: none;
+  }
+
+  .seat-label.seat-sold {
+    background-color: #f44336;
+    color: white;
+    border-color: #da190b;
+    cursor: pointer;
+    opacity: 0.7;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .seat-label.seat-sold:hover {
+    background-color: #f44336;
+    transform: none;
+    opacity: 1;
+  }
+
+  a.seat-label.seat-sold {
+    color: white;
+    text-decoration: none;
+  }
+
+  a.seat-label.seat-sold:visited {
+    color: white;
+  }
+
+  .seat-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: inherit;
+    border-radius: 2px;
+    transition: background-color 0.2s ease;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #f9f9f9;
+    border-radius: 4px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .legend-box {
+    width: 30px;
+    height: 30px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+  }
+
+  .legend-box.available {
+    background-color: #4caf50;
+    border-color: #45a049;
+  }
+
+  .legend-box.selected {
+    background-color: #2196F3;
+    border-color: #0b7dda;
+  }
+
+  .legend-box.sold {
+    background-color: #f44336;
+    border-color: #da190b;
+  }
+
+  .legend-item span {
+    font-weight: 500;
+    color: #555;
+  }
+
+  .actions {
+    text-align: center;
+    margin-top: 2rem;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin: 0 0.5rem;
+  }
+
+  .btn-primary {
+    background-color: #2196F3;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #0b7dda;
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background-color: #5a6268;
+  }
+
+  .ticket-form {
+    display: contents;
+  }
+</style>
+
+<div class="tickets-container">
+  <div class="booking-header">
+    <h1>Sell Tickets</h1>
+    <div class="movie-info">
+      <h2><%= @movie.title %></h2>
+      <p><strong>Date & Time:</strong> <%= @showtime.start_time.strftime("%B %d, %Y at %H:%M") %></p>
+      <p><strong>Cinema:</strong> <%= @hall.cinema.name %></p>
+      <p><strong>Hall:</strong> <%= @hall.name %></p>
+    </div>
+  </div>
+
+  <div class="screen-container">
+    <div class="screen">SCREEN</div>
+  </div>
+
+  <%= form_with url: tickets_path, method: :post, local: true, class: "ticket-form" do |form| %>
+    <!-- Hidden field for showtime_id - MUST be nested under 'ticket' -->
+    <%= hidden_field_tag "ticket[showtime_id]", @showtime.id %>
+
+    <div class="seat-map">
+      <div class="seat-grid" style="grid-template-columns: repeat(<%= @hall.seats_per_row %>, 1fr); gap: 8px;">
+        <% @seats.each do |seat| %>
+          <% ticket = @tickets_by_seat[seat.id] %>
+          <% if ticket && ticket.status != 'cancelled' %>
+            <button type="button" class="seat-label seat-status-<%= ticket.status %>" onclick="openEditModal(<%= ticket.id %>, '<%= seat.row %>', '<%= seat.number %>')" title="Edit Seat <%= seat.row %>-<%= seat.number %> (<%= ticket.status %>)">
+              <div class="seat-text"><%= seat.number %></div>
+            </button>
+          <% else %>
+            <label class="seat-label" title="Seat <%= seat.row %>-<%= seat.number %>">
+              <%= check_box_tag "ticket[seat_ids][]", seat.id %>
+              <div class="seat-text"><%= seat.number %></div>
+            </label>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-box available"></div>
+        <span>Available</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-box selected"></div>
+        <span>Selected</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-box sold"></div>
+        <span>Sold</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-box" style="background-color: #ff9800; border-color: #e65100;"></div>
+        <span>Pending</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <%= form.submit "Sell Selected Tickets", class: "btn btn-primary" %>
+      <%= link_to "Back to Showtimes", showtimes_path, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+</div>
+
+<!-- Edit Ticket Modal -->
+<div id="editModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeEditModal()">&times;</span>
+    <h2>Edit Ticket</h2>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+  function openEditModal(ticketId, row, number) {
+    const modal = document.getElementById('editModal');
+    const modalBody = document.getElementById('modalBody');
+    
+    fetch(`/tickets/${ticketId}/edit`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(response => response.text())
+      .then(html => {
+        modalBody.innerHTML = html;
+        modal.style.display = 'block';
+      })
+      .catch(error => console.error('Error:', error));
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+  }
+
+  window.onclick = function(event) {
+    const modal = document.getElementById('editModal');
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  }
+</script>
+
+<style>
+  .modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 2rem;
+    border: 1px solid #888;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: #000;
+  }
+</style>

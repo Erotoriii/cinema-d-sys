@@ -142,12 +142,17 @@
       <% if user_signed_in? && current_user.admin? %>
         <li><a href="<%= cinemas_path %>" class="<%= 'active' if current_page?(cinemas_path) %>">Cinemas</a></li>
         <li><a href="<%= halls_path %>" class="<%= 'active' if current_page?(halls_path) %>">Halls</a></li>
-        <li><a href="<%= '#' %>" class="<%= 'active' if current_page?('#') %>">Staff Management</a></li>
+        <li><a href="<%= users_path %>" class="<%= 'active' if current_page?(users_path) %>">Staff Management</a></li>
       <% end %>
     </ul>
     <div class="nav-spacer"></div>
     <ul class="nav-auth">
       <% if user_signed_in? %>
+        <% if current_workday %>
+          <li class="user-welcome" style="background-color: #27ae60; color: #ecf0f1; padding: 16px 20px; border-radius: 4px;">
+            📍 Active Shift: <%= current_workday.cinema.name %>
+          </li>
+        <% end %>
         <li class="user-welcome">
           Welcome, <%= current_user.name.present? ? current_user.name : current_user.email %>!
         </li>

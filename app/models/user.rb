@@ -4,6 +4,9 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
+  # Associations
+  has_many :workdays, dependent: :destroy
+
   # Role-based access control
   enum :role, { staff: "staff", manager: "manager", admin: "admin" }, default: :staff
 

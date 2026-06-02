@@ -26,6 +26,9 @@
           <td><%= showtime.hall&.cinema&.name %></td>
           <td>
             <%= link_to "Show", showtime_path(showtime) %>
+            <% if current_workday %>
+              <%= link_to "Sell Tickets", new_ticket_path(showtime_id: showtime.id), class: "btn btn-success" %>
+            <% end %>
             <% if user_signed_in? && current_user.admin_or_manager? %>
               <%= link_to "Edit", edit_showtime_path(showtime) %>
               <%= button_to "Delete", showtime_path(showtime), method: :delete, data: { turbo_confirm: "Are you sure?" }, form: { style: "display:inline;" } %>
@@ -38,3 +41,4 @@
 <% else %>
   <p>No showtimes scheduled yet.</p>
 <% end %>
+

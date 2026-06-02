@@ -1,6 +1,7 @@
 class Showtime < ApplicationRecord
   belongs_to :movie
   belongs_to :hall
+  has_many :tickets
 
   # Validations
   validates :movie_id, :hall_id, :start_time, presence: true

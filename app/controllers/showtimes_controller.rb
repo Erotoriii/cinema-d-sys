@@ -4,7 +4,18 @@ class ShowtimesController < ApplicationController
 
   # GET /showtimes
   def index
-    @showtimes = Showtime.includes(:movie, :hall).order(:start_time)
+    if current_workday
+      # If user has an active shift, show only showtimes from that cinema
+      @showtimes = Showtime.joins(:hall).where(halls: { cinema_id: current_workday.cinema_id })
+                           .includes(:movie, :hall).order(:start_time)
+    elsif current_user.admin_or_manager?
+      # Admins and managers can see all showtimes
+      @showtimes = Showtime.includes(:movie, :hall).order(:start_time)
+    else
+      # Staff without active shift cannot view showtimes
+      @showtimes = []
+      flash.now[:alert] = "Please start a shift first to view showtimes."
+    end
   end
 
   # GET /showtimes/:id
@@ -56,6 +67,6 @@ class ShowtimesController < ApplicationController
   end
 
   def authorize_manager!
-    redirect_to showtimes_url, alert: "Not authorized." unless current_user&.manager?
+    redirect_to showtimes_url, alert: "Not authorized." unless current_user&.admin_or_manager?
   end
 end

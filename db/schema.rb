@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_15_103328) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_31_123635) do
   create_table "cinemas", force: :cascade do |t|
     t.string "address"
     t.integer "company_id", null: false
@@ -92,8 +92,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_15_103328) do
     t.integer "showtime_id", null: false
     t.string "status"
     t.datetime "updated_at", null: false
+    t.integer "workday_id", null: false
     t.index ["seat_id"], name: "index_tickets_on_seat_id"
     t.index ["showtime_id"], name: "index_tickets_on_showtime_id"
+    t.index ["workday_id"], name: "index_tickets_on_workday_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -132,6 +134,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_15_103328) do
   add_foreign_key "showtimes", "movies"
   add_foreign_key "tickets", "seats"
   add_foreign_key "tickets", "showtimes"
+  add_foreign_key "tickets", "workdays"
   add_foreign_key "workdays", "cinemas"
   add_foreign_key "workdays", "users"
 end

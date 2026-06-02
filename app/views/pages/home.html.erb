@@ -1,3 +1,151 @@
-<h1>Welcome to Cinema Management System</h1>
+<style>
+  .dashboard-container {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 30px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
 
-<p>Select a section from the navigation bar above to get started.</p>
+  .dashboard-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #2c3e50;
+  }
+
+  .shift-banner {
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .shift-banner.active {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+  }
+
+  .shift-info {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .shift-time {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #2c3e50;
+  }
+
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  .form-group select:focus,
+  .form-group input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+  }
+
+  .button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-primary {
+    background-color: #3498db;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #2980b9;
+  }
+
+  .btn-danger {
+    background-color: #e74c3c;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background-color: #c0392b;
+  }
+
+  .welcome-message {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 30px;
+  }
+</style>
+
+<div class="dashboard-container">
+  <div class="dashboard-title">👤 Staff Dashboard</div>
+
+  <div class="welcome-message">
+    Hello, <strong><%= current_user.email %></strong>! Manage your shift below.
+  </div>
+
+  <% if current_workday.present? %>
+    <!-- Active Shift Banner -->
+    <div class="shift-banner active">
+      <div>
+        <div class="shift-info">✅ Active Shift at <strong><%= current_workday.cinema.name %></strong></div>
+        <div class="shift-time">Started: <%= current_workday.start_time.strftime("%H:%M on %B %d, %Y") %></div>
+      </div>
+    </div>
+
+    <!-- End Shift Button -->
+    <div class="button-group">
+      <%= button_to "End Shift", workday_path(current_workday), method: :patch, class: "btn btn-danger" %>
+    </div>
+  <% else %>
+    <!-- Start Shift Form -->
+    <div class="welcome-message">
+      You don't have an active shift. Start one below.
+    </div>
+
+    <%= form_with url: workdays_path, local: true, method: :post, scope: :workday do |f| %>
+      <div class="form-group">
+        <%= f.label :cinema_id, "Select Cinema" %>
+        <%= f.collection_select :cinema_id, Cinema.all, :id, :name, { prompt: "Choose a cinema" } %>
+      </div>
+
+      <div class="button-group">
+        <%= f.submit "Start Shift", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  <% end %>
+</div>
