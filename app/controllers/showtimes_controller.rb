@@ -65,7 +65,7 @@ class ShowtimesController < ApplicationController
   end
 
   def showtime_params
-    params.require(:showtime).permit(:movie_id, :hall_id, :start_time)
+    params.require(:showtime).permit(:movie_id, :hall_id, :start_time, :price)
   end
 
   def authorize_manager!

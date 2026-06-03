@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_02_150246) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_03_130741) do
   create_table "cinemas", force: :cascade do |t|
     t.string "address"
     t.integer "company_id", null: false
@@ -63,6 +63,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_02_150246) do
   create_table "reports", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "status"
+    t.integer "total_sales"
     t.datetime "updated_at", null: false
     t.integer "workday_id", null: false
     t.index ["workday_id"], name: "index_reports_on_workday_id"

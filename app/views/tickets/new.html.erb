@@ -34,6 +34,11 @@
     color: #777;
   }
 
+  .ticket-price {
+    font-weight: 600;
+    color: #333;
+  }
+
   .screen-container {
     text-align: center;
     margin: 2rem 0;
@@ -99,6 +104,7 @@
     height: 0;
   }
 
+  .seat-label.seat-selected .seat-text,
   .seat-label input[type="checkbox"]:checked + .seat-text {
     background-color: #2196F3;
     border-color: #0b7dda;
@@ -251,24 +257,55 @@
   .ticket-form {
     display: contents;
   }
+
+  .stats-panel {
+    display: flex;
+    flex-direction: column;
+    background-color: #e3f2fd;
+    padding: 2rem;
+    border-radius: 8px;
+    gap: 1.5rem;
+  }
+
+  .stat-item {
+    text-align: center;
+    flex: 1;
+  }
+
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #1976d2;
+  }
+
+  .stat-label {
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.5rem;
+    letter-spacing: 1px;
+  }
 </style>
 
 <div class="tickets-container">
-  <div class="booking-header">
-    <h1>Sell Tickets</h1>
-    <div class="movie-info">
-      <h2><%= @movie.title %></h2>
-      <p><strong>Date & Time:</strong> <%= @showtime.start_time.strftime("%B %d, %Y at %H:%M") %></p>
-      <p><strong>Cinema:</strong> <%= @hall.cinema.name %></p>
-      <p><strong>Hall:</strong> <%= @hall.name %></p>
-    </div>
-  </div>
+  <div style="display: flex; gap: 2rem;">
+    <div style="flex: 1;">
+      <div class="booking-header">
+        <h1>Sell Tickets</h1>
+        <div class="movie-info">
+          <h2><%= @movie.title %></h2>
+          <p class="ticket-price"><strong>Price:</strong> <%= @showtime.price %> UAH</p>
+          <p><strong>Date & Time:</strong> <%= @showtime.start_time.strftime("%B %d, %Y at %H:%M") %></p>
+          <p><strong>Cinema:</strong> <%= @hall.cinema.name %></p>
+          <p><strong>Hall:</strong> <%= @hall.name %></p>
+        </div>
+      </div>
 
-  <div class="screen-container">
-    <div class="screen">SCREEN</div>
-  </div>
+      <div class="screen-container">
+        <div class="screen">SCREEN</div>
+      </div>
 
-  <%= form_with url: tickets_path, method: :post, local: true, class: "ticket-form" do |form| %>
+      <%= form_with url: tickets_path, method: :post, local: true, class: "ticket-form" do |form| %>
     <!-- Hidden field for showtime_id - MUST be nested under 'ticket' -->
     <%= hidden_field_tag "ticket[showtime_id]", @showtime.id %>
 
@@ -310,10 +347,35 @@
     </div>
 
     <div class="actions">
+      <p id="total-price-display" style="margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600;">Total Price: 0 UAH</p>
       <%= form.submit "Sell Selected Tickets", class: "btn btn-primary" %>
       <%= link_to "Back to Showtimes", showtimes_path, class: "btn btn-secondary" %>
     </div>
-  <% end %>
+      <% end %>
+    </div>
+
+    <div style="flex: 0 0 320px; display: flex; flex-direction: column; justify-content: center;">
+      <% sold_tickets_count = @showtime.tickets.where(status: ['Sold', 'sold']).count %>
+      <% unavailable_tickets_count = @showtime.tickets.where.not(status: ['Available', 'available', 'cancelled', nil]).count %>
+      <% available_seats_count = @seats.count - unavailable_tickets_count %>
+      <% total_earned = sold_tickets_count * (@showtime.price || 0) %>
+
+      <div class="stats-panel">
+        <div class="stat-item">
+          <div class="stat-value"><%= available_seats_count %></div>
+          <div class="stat-label">Available Seats</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value"><%= sold_tickets_count %></div>
+          <div class="stat-label">Sold Seats</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value"><%= total_earned %> UAH</div>
+          <div class="stat-label">Total Revenue</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Edit Ticket Modal -->
@@ -326,6 +388,35 @@
 </div>
 
 <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const seatCheckboxes = document.querySelectorAll('input[name="ticket[seat_ids][]"]');
+    const totalPriceDisplay = document.getElementById('total-price-display');
+    const ticketPrice = <%= @showtime.price.to_f %>;
+
+    function updateTotalPrice() {
+      const selectedCount = document.querySelectorAll('.seat-selected').length;
+      totalPriceDisplay.innerText = `Total Price: ${selectedCount * ticketPrice} UAH`;
+    }
+
+    seatCheckboxes.forEach(function(checkbox) {
+      const seatLabel = checkbox.closest('.seat-label');
+
+      if (seatLabel && checkbox.checked) {
+        seatLabel.classList.add('seat-selected');
+      }
+
+      checkbox.addEventListener('change', function() {
+        if (seatLabel) {
+          seatLabel.classList.toggle('seat-selected', checkbox.checked);
+        }
+
+        updateTotalPrice();
+      });
+    });
+
+    updateTotalPrice();
+  });
+
   function openEditModal(ticketId, row, number) {
     const modal = document.getElementById('editModal');
     const modalBody = document.getElementById('modalBody');

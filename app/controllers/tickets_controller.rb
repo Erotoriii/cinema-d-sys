@@ -47,30 +47,19 @@ class TicketsController < ApplicationController
     errors = []
 
     seat_ids.each do |seat_id|
-      # Check if ticket already exists for this showtime and seat
-      if Ticket.exists?(showtime_id: showtime_id, seat_id: seat_id)
-        Rails.logger.warn "Ticket already exists for showtime #{showtime_id}, seat #{seat_id}"
-        errors << "Seat #{seat_id} is already booked."
-        next
-      end
-
-      ticket = Ticket.new(
-        showtime_id: showtime_id,
-        seat_id: seat_id,
-        status: 'sold',
-        workday_id: current_workday.id
-      )
+      ticket = Ticket.find_or_initialize_by(showtime_id: showtime_id, seat_id: seat_id)
 
       Rails.logger.debug "Creating ticket: #{ticket.inspect}"
-      
-      if ticket.save
+
+      ticket.update!(status: 'sold', workday_id: current_workday.id)
+      if ticket.persisted?
         Rails.logger.info "Ticket saved for seat #{seat_id}"
         created_count += 1
-      else
-        error_msg = ticket.errors.full_messages.join(', ')
-        Rails.logger.error "TICKET SAVE ERROR for seat #{seat_id}: #{error_msg}"
-        errors << "Seat #{seat_id}: #{error_msg}"
       end
+    rescue ActiveRecord::RecordInvalid => e
+      error_msg = e.record.errors.full_messages.join(', ')
+      Rails.logger.error "TICKET SAVE ERROR for seat #{seat_id}: #{error_msg}"
+      errors << "Seat #{seat_id}: #{error_msg}"
     end
 
     Rails.logger.debug "=== TICKET CREATE SUMMARY ==="

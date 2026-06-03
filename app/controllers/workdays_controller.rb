@@ -19,20 +19,27 @@ class WorkdaysController < ApplicationController
     end
   end
 
-  # PATCH/PUT /workdays/:id - End a shift
+  # PATCH/PUT /workdays/:id - End a shift        
   def update
-    @workday = current_workday
+    @workday = current_user.workdays.find(params[:id])
 
-    if @workday.nil?
-      redirect_to root_path, alert: "No active shift found."
-      return
+    # 1. Знаходимо всі продані квитки за цю зміну
+    sold_tickets = Ticket.where(workday_id: @workday.id, status: 'Sold')
+    
+    # 2. ДИНАМІЧНИЙ ПІДРАХУНОК: об'єднуємо з сеансами та сумуємо їхні реальні ціни
+    total_revenue = sold_tickets.joins(:showtime).sum('showtimes.price')
+
+    ActiveRecord::Base.transaction do
+      @workday.update!(end_time: Time.current)
+
+      Report.create!(
+        workday_id: @workday.id,
+        total_sales: total_revenue,
+        status: 'pending'
+      )
     end
 
-    if @workday.update(end_time: Time.current)
-      redirect_to root_path, notice: "Shift ended. Thank you for your work!"
-    else
-      redirect_to root_path, alert: "Failed to end shift."
-    end
+    redirect_to root_path, notice: "Робочу зміну завершено. Автозвіт сформовано успішно! Загальна виручка: #{total_revenue} грн."
   end
 
   private
