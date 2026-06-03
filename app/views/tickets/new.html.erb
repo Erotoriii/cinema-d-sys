@@ -314,7 +314,7 @@
         <% @seats.each do |seat| %>
           <% ticket = @tickets_by_seat[seat.id] %>
           <% if ticket && ticket.status != 'cancelled' %>
-            <button type="button" class="seat-label seat-status-<%= ticket.status %>" onclick="openEditModal(<%= ticket.id %>, '<%= seat.row %>', '<%= seat.number %>')" title="Edit Seat <%= seat.row %>-<%= seat.number %> (<%= ticket.status %>)">
+            <button type="button" class="seat-label seat-status-<%= ticket.status %>" data-seat-id="<%= seat.id %>" data-ticket-id="<%= ticket.id %>" title="Right-click for options - Seat <%= seat.row %>-<%= seat.number %> (<%= ticket.status %>)">
               <div class="seat-text"><%= seat.number %></div>
             </button>
           <% else %>
@@ -378,24 +378,27 @@
   </div>
 </div>
 
-<!-- Edit Ticket Modal -->
-<div id="editModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <span class="close" onclick="closeEditModal()">&times;</span>
-    <h2>Edit Ticket</h2>
-    <div id="modalBody"></div>
-  </div>
+<!-- Seat Right-Click Context Menu -->
+<div id="seat-context-menu" class="context-menu" style="display: none; position: fixed; z-index: 1000;">
+  <div class="context-menu-item" data-action="cancelled">Cancel Seat</div>
+  <div class="context-menu-item" data-action="sold">Make Sold</div>
+  <div class="context-menu-item" data-action="pending">Make Pending</div>
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('turbo:load', function() {
     const seatCheckboxes = document.querySelectorAll('input[name="ticket[seat_ids][]"]');
     const totalPriceDisplay = document.getElementById('total-price-display');
     const ticketPrice = <%= @showtime.price.to_f %>;
+    const contextMenu = document.getElementById('seat-context-menu');
+    let currentSeatId = null;
+    let currentTicketId = null;
 
     function updateTotalPrice() {
       const selectedCount = document.querySelectorAll('.seat-selected').length;
-      totalPriceDisplay.innerText = `Total Price: ${selectedCount * ticketPrice} UAH`;
+      if (totalPriceDisplay) {
+        totalPriceDisplay.innerText = `Total Price: ${selectedCount * ticketPrice} UAH`;
+      }
     }
 
     seatCheckboxes.forEach(function(checkbox) {
@@ -409,76 +412,104 @@
         if (seatLabel) {
           seatLabel.classList.toggle('seat-selected', checkbox.checked);
         }
-
         updateTotalPrice();
+      });
+    });
+
+    // Right-click context menu handler
+    document.querySelectorAll('.seat-label[data-seat-id]').forEach(function(seatBtn) {
+      seatBtn.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        currentSeatId = seatBtn.getAttribute('data-seat-id');
+        currentTicketId = seatBtn.getAttribute('data-ticket-id');
+        contextMenu.style.display = 'block';
+        contextMenu.style.left = e.pageX + 'px';
+        contextMenu.style.top = e.pageY + 'px';
+      });
+    });
+
+    // Hide context menu when clicking elsewhere
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.context-menu') || e.target.closest('[data-seat-id]')) {
+        return;
+      }
+      contextMenu.style.display = 'none';
+    });
+
+    // Hide context menu on escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        contextMenu.style.display = 'none';
+      }
+    });
+
+    // Context menu action handlers
+    document.querySelectorAll('.context-menu-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        const action = item.getAttribute('data-action');
+        if (currentTicketId) {
+          fetch(`/tickets/${currentTicketId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ ticket: { status: action } })
+          })
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(data => {
+                throw new Error(data.errors ? data.errors.join(', ') : `HTTP ${response.status}`);
+              });
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              location.reload();
+            } else {
+              alert('Error: ' + (data.errors ? data.errors.join(', ') : 'Unknown error'));
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating ticket: ' + error.message);
+          });
+        }
+        contextMenu.style.display = 'none';
       });
     });
 
     updateTotalPrice();
   });
-
-  function openEditModal(ticketId, row, number) {
-    const modal = document.getElementById('editModal');
-    const modalBody = document.getElementById('modalBody');
-    
-    fetch(`/tickets/${ticketId}/edit`, {
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-      .then(response => response.text())
-      .then(html => {
-        modalBody.innerHTML = html;
-        modal.style.display = 'block';
-      })
-      .catch(error => console.error('Error:', error));
-  }
-
-  function closeEditModal() {
-    document.getElementById('editModal').style.display = 'none';
-  }
-
-  window.onclick = function(event) {
-    const modal = document.getElementById('editModal');
-    if (event.target === modal) {
-      modal.style.display = 'none';
-    }
-  }
 </script>
 
 <style>
-  .modal {
+  .context-menu {
     position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
-  }
-
-  .modal-content {
-    background-color: #fefefe;
-    margin: 10% auto;
-    padding: 2rem;
-    border: 1px solid #888;
+    background-color: #f3f3f3;
+    border: 1px solid #d0d0d0;
     border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 4px 0;
+    min-width: 150px;
+    z-index: 1000;
   }
 
-  .close {
-    color: #aaa;
-    float: right;
-    font-size: 2rem;
-    font-weight: bold;
+  .context-menu-item {
+    padding: 8px 16px;
     cursor: pointer;
+    user-select: none;
+    font-size: 0.9rem;
+    color: #333;
+    transition: background-color 0.15s ease;
   }
 
-  .close:hover,
-  .close:focus {
-    color: #000;
+  .context-menu-item:hover {
+    background-color: #e3e3e3;
+  }
+
+  .context-menu-item:active {
+    background-color: #d0d0d0;
   }
 </style>

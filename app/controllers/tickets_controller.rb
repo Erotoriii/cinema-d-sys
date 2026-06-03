@@ -96,15 +96,21 @@ class TicketsController < ApplicationController
 
   # PATCH/PUT /tickets/:id
   def update
+    Rails.logger.debug "=== TICKET UPDATE DEBUG ==="
+    Rails.logger.debug "params: #{params.inspect}"
+    Rails.logger.debug "ticket_update_params: #{ticket_update_params.inspect}"
+    
     old_status = @ticket.status
     old_seat_id = @ticket.seat_id
     new_status = ticket_update_params[:status]
     new_seat_id = ticket_update_params[:seat_id]
 
+    Rails.logger.debug "Updating ticket #{@ticket.id} from status #{old_status} to #{new_status}"
+
     if @ticket.update(ticket_update_params)
       message = "Ticket updated successfully"
       
-      if old_seat_id != new_seat_id
+      if old_seat_id != new_seat_id && new_seat_id.present?
         old_seat = Seat.find(old_seat_id)
         new_seat = Seat.find(new_seat_id)
         message += ": seat changed from Row #{old_seat.row}, Seat #{old_seat.number} to Row #{new_seat.row}, Seat #{new_seat.number}"
@@ -114,14 +120,18 @@ class TicketsController < ApplicationController
         message += ", status changed from #{old_status} to #{new_status}"
       end
       
+      Rails.logger.debug "Update successful: #{message}"
+      
       respond_to do |format|
-        format.json { render json: { success: true, message: message, new_status: new_seat_id != old_seat_id ? 'moved' : new_status } }
+        format.json { render json: { success: true, message: message, new_status: new_seat_id != old_seat_id && new_seat_id.present? ? 'moved' : new_status } }
         format.html do
           flash[:notice] = message
           redirect_to @ticket
         end
       end
     else
+      Rails.logger.error "Update failed: #{@ticket.errors.full_messages.join(', ')}"
+      
       respond_to do |format|
         format.json { render json: { success: false, errors: @ticket.errors.full_messages }, status: :unprocessable_entity }
         format.html do
