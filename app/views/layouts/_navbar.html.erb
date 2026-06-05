@@ -138,7 +138,8 @@
       <li><a href="<%= root_path %>" class="<%= 'active' if current_page?(root_path) %>">Home</a></li>
       <li><a href="<%= movies_path %>" class="<%= 'active' if current_page?(movies_path) %>">Movies</a></li>
       <li><a href="<%= showtimes_path %>" class="<%= 'active' if current_page?(showtimes_path) %>">Schedule</a></li>
-      
+      <li><a href="<%= products_path %>" class="<%= 'active' if current_page?(products_path) %>">Products</a></li>
+
       <% if user_signed_in? && current_user.admin? %>
         <li><a href="<%= cinemas_path %>" class="<%= 'active' if current_page?(cinemas_path) %>">Cinemas</a></li>
         <li><a href="<%= halls_path %>" class="<%= 'active' if current_page?(halls_path) %>">Halls</a></li>

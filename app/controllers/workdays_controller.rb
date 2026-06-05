@@ -22,24 +22,21 @@ class WorkdaysController < ApplicationController
   # PATCH/PUT /workdays/:id - End a shift        
   def update
     @workday = current_user.workdays.find(params[:id])
+    report = @workday.close_shift!
+    session[:workday_id] = nil
 
-    # 1. Знаходимо всі продані квитки за цю зміну
-    sold_tickets = Ticket.where(workday_id: @workday.id, status: 'Sold')
+    redirect_to root_path, notice: "Робочу зміну завершено. Виручка з квитків: #{report.total_revenue} грн, бар: #{report.total_sales} грн."
+  end
+
+  # PATCH /workdays/:id/close - Close shift and generate report
+  def close
+    @workday = Workday.find(params[:id])
+    report = @workday.close_shift!
     
-    # 2. ДИНАМІЧНИЙ ПІДРАХУНОК: об'єднуємо з сеансами та сумуємо їхні реальні ціни
-    total_revenue = sold_tickets.joins(:showtime).sum('showtimes.price')
-
-    ActiveRecord::Base.transaction do
-      @workday.update!(end_time: Time.current)
-
-      Report.create!(
-        workday_id: @workday.id,
-        total_sales: total_revenue,
-        status: 'pending'
-      )
-    end
-
-    redirect_to root_path, notice: "Робочу зміну завершено. Автозвіт сформовано успішно! Загальна виручка: #{total_revenue} грн."
+    #очищаємо сесію, щоб сайт зрозумів, що зміна завершилась
+    session[:workday_id] = nil 
+    
+    redirect_to root_path, notice: "Shift closed successfully. Ticket revenue: #{report.total_revenue} грн, bar revenue: #{report.total_sales} грн."
   end
 
   private

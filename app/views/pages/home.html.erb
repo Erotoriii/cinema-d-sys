@@ -129,7 +129,7 @@
 
     <!-- End Shift Button -->
     <div class="button-group">
-      <%= button_to "End Shift", workday_path(current_workday), method: :patch, class: "btn btn-danger" %>
+      <%= link_to "End Shift", close_workday_path(current_workday), data: { turbo_method: :patch, turbo_confirm: "Are you sure you want to close the shift? This will generate the final report." }, class: "btn btn-danger" %>
     </div>
   <% else %>
     <!-- Start Shift Form -->

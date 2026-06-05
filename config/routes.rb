@@ -10,9 +10,18 @@ Rails.application.routes.draw do
   resources :cinemas
   resources :halls
   resources :showtimes
-  resources :workdays, only: [:create, :update]
+  resources :workdays do
+    member do
+      patch :close
+    end
+  end
   resources :tickets, only: [:new, :create, :show, :edit, :update, :destroy]
   resources :users, path: 'staff'
+  resources :products, only: [:index, :create, :destroy] do
+    collection do
+      patch :bulk_update
+    end
+  end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

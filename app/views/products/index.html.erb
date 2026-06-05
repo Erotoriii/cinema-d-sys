@@ -1,0 +1,465 @@
+<div class="products-page" data-controller="products">
+  <div class="products-header">
+    <div>
+      <h1>Товари</h1>
+      <p class="products-lead">Керування запасами, продажами та надходженнями за активну зміну.</p>
+    </div>
+
+    <div class="products-summary">
+      <% if @active_workday.present? %>
+        <div class="summary-pill">
+          Активна зміна: <strong><%= @active_workday.cinema.name %></strong>
+        </div>
+        <div class="summary-pill muted">
+          Барна виручка: <strong><%= number_to_currency(@active_workday.bar_sales_total, unit: "₴", precision: 2) %></strong>
+        </div>
+      <% else %>
+        <div class="summary-pill warning">
+          Спочатку потрібно відкрити активну зміну
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="products-toolbar">
+    <button type="button" class="btn btn-secondary" data-action="products#openCreateDialog" <%= "disabled" unless @active_workday.present? %>>
+      СТВОРИТИ
+    </button>
+
+    <%= button_tag "ЗБЕРЕГТИ ЗМІНИ",
+      type: "submit",
+      form: "products-bulk-form",
+      class: "btn btn-primary",
+      disabled: !@active_workday.present? %>
+  </div>
+
+  <% if @products.any? %>
+    <%= form_with url: bulk_update_products_path, method: :patch, local: true, id: "products-bulk-form", class: "products-form" do %>
+      <div class="table-frame">
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>Назва</th>
+              <th>Ціна</th>
+              <th>Кількість</th>
+              <th>Продано</th>
+              <th>Надійшло</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @products.each do |product| %>
+              <tr class="product-row" data-product-row data-initial-amount="<%= product.amount %>">
+                <td class="product-name"><%= product.name %></td>
+                <td class="product-price"><%= number_to_currency(product.price, unit: "₴", precision: 2) %></td>
+                <td class="product-stock"><%= product.amount %></td>
+
+                <td>
+                  <div class="adjuster">
+                    <button type="button" class="adjust-button" data-action="products#changeQuantity" data-adjust-target="sold" data-direction="minus">−</button>
+                    <input type="number" class="qty-input sold-qty" name="products[<%= product.id %>][sold_qty]" value="0" readonly>
+                    <button type="button" class="adjust-button" data-action="products#changeQuantity" data-adjust-target="sold" data-direction="plus">+</button>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="adjuster">
+                    <button type="button" class="adjust-button" data-action="products#changeQuantity" data-adjust-target="arrived" data-direction="minus">−</button>
+                    <input type="number" class="qty-input arrived-qty" name="products[<%= product.id %>][arrived_qty]" value="0" readonly>
+                    <button type="button" class="adjust-button" data-action="products#changeQuantity" data-adjust-target="arrived" data-direction="plus">+</button>
+                  </div>
+                </td>
+
+                <td class="product-actions">
+                  <%= link_to "🗑", product_path(product), class: "delete-button", data: { turbo_method: :delete, turbo_confirm: "Ви впевнені, що хочете видалити цей товар?" } %>
+                  <input type="hidden" name="products[<%= product.id %>][id]" value="<%= product.id %>">
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      <h2>Товари ще не додані</h2>
+      <p>Створи першу позицію через модалку праворуч угорі.</p>
+    </div>
+  <% end %>
+
+  <dialog class="product-dialog" data-products-target="dialog">
+    <div class="dialog-backdrop" data-action="click->products#closeCreateDialog">
+      <div class="dialog-panel" data-action="click->products#stopPropagation">
+        <div class="dialog-header">
+          <h2>Створити товар</h2>
+          <button type="button" class="dialog-close" data-action="products#closeCreateDialog">×</button>
+        </div>
+
+        <%= form_with model: @new_product, local: true, class: "new-product-form" do |f| %>
+          <% if @new_product.errors.any? %>
+            <div id="error_explanation">
+              <h2><%= pluralize(@new_product.errors.count, "error") %> prohibited this product from being saved:</h2>
+              <ul>
+                <% @new_product.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <%= f.label :name, "Назва" %>
+              <%= f.text_field :name, placeholder: "Назва товару" %>
+            </div>
+
+            <div class="form-group">
+              <%= f.label :price, "Ціна" %>
+              <%= f.number_field :price, placeholder: "0", step: 0.01 %>
+            </div>
+
+            <div class="form-group">
+              <%= f.label :amount, "Початкова кількість" %>
+              <%= f.number_field :amount, placeholder: "0", value: 0 %>
+            </div>
+
+            <div class="form-group">
+              <%= f.label :sold_amount, "Початково продано" %>
+              <%= f.number_field :sold_amount, placeholder: "0", value: 0 %>
+            </div>
+          </div>
+
+          <div class="dialog-actions">
+            <button type="button" class="btn btn-secondary" data-action="products#closeCreateDialog">Скасувати</button>
+            <%= f.submit "Створити", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </dialog>
+</div>
+
+<style>
+  .products-page {
+    max-width: 1120px;
+    margin: 32px auto 48px;
+    padding: 0 24px;
+  }
+
+  .products-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+  }
+
+  .products-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .products-lead {
+    margin: 8px 0 0;
+    color: #5f6b7a;
+  }
+
+  .products-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .summary-pill {
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: #eef7ff;
+    color: #2457a7;
+    font-size: 0.95rem;
+    border: 1px solid #cfe1ff;
+  }
+
+  .summary-pill.muted {
+    background: #f5f7fa;
+    color: #425466;
+    border-color: #d9e2ec;
+  }
+
+  .summary-pill.warning {
+    background: #fff5e6;
+    color: #8f5b00;
+    border-color: #ffd89d;
+  }
+
+  .products-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .btn {
+    border: none;
+    border-radius: 10px;
+    padding: 0.8rem 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background: #eef2f7;
+    color: #1f2937;
+    border: 1px solid #dbe2ea;
+  }
+
+  .table-frame {
+    background: #fff;
+    border: 1px solid #e5eaf0;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  }
+
+  .products-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .products-table th,
+  .products-table td {
+    padding: 16px 18px;
+    text-align: center;
+    border-bottom: 1px solid #edf1f5;
+    vertical-align: middle;
+  }
+
+  .products-table thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .product-row:nth-child(even) {
+    background: #fbfcfe;
+  }
+
+  .product-name {
+    text-align: left;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .product-price,
+  .product-stock {
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .adjuster {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 6px 8px;
+  }
+
+  .adjust-button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  }
+
+  .qty-input {
+    width: 56px;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .qty-input:focus {
+    outline: none;
+  }
+
+  .product-actions {
+    width: 64px;
+  }
+
+  .delete-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    text-decoration: none;
+    background: #fff1f2;
+    color: #e11d48;
+    border: 1px solid #fecdd3;
+  }
+
+  .empty-state {
+    padding: 36px;
+    background: #fff;
+    border: 1px dashed #d8e0ea;
+    border-radius: 18px;
+    color: #526171;
+  }
+
+  .empty-state h2 {
+    margin-top: 0;
+  }
+
+  .product-dialog {
+    border: none;
+    padding: 0;
+    background: transparent;
+  }
+
+  .product-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.55);
+  }
+
+  .dialog-backdrop {
+    display: grid;
+    place-items: center;
+    min-width: min(92vw, 720px);
+    min-height: 100%;
+  }
+
+  .dialog-panel {
+    width: min(100%, 560px);
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.24);
+    padding: 22px;
+  }
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .dialog-header h2 {
+    margin: 0;
+  }
+
+  .dialog-close {
+    border: none;
+    background: #eef2f7;
+    color: #334155;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 1.25rem;
+    cursor: pointer;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-group label {
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .form-group input {
+    border: 1px solid #d8e0ea;
+    border-radius: 12px;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  #error_explanation {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    color: #9f1239;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+
+  #error_explanation h2 {
+    margin-top: 0;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 900px) {
+    .products-header {
+      flex-direction: column;
+    }
+
+    .products-summary {
+      align-items: flex-start;
+    }
+
+    .products-toolbar {
+      justify-content: stretch;
+      flex-direction: column;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .products-table {
+      min-width: 820px;
+    }
+
+    .table-frame {
+      overflow-x: auto;
+    }
+  }
+</style>
