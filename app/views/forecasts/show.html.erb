@@ -1,0 +1,33 @@
+<div class="forecast-run-page">
+  <h1>Forecast Run #<%= @run.id %></h1>
+  <p>Run at: <%= @run.run_at.strftime("%d/%m/%Y %H:%M") %> — horizon: <%= @run.horizon_days %> days — model: <%= @run.model %></p>
+
+  <% if @forecasts.any? %>
+    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Hall</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Showtime</th>
+          <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Predicted Tickets</th>
+          <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Fill %</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @forecasts.each do |f| %>
+          <tr>
+            <td style="padding:8px; border-bottom:1px solid #f6f8fa"><%= f.hall&.name %></td>
+            <td style="padding:8px; border-bottom:1px solid #f6f8fa"><%= f.showtime_at.strftime("%d/%m %H:%M") %></td>
+            <td style="padding:8px; text-align:right; border-bottom:1px solid #f6f8fa"><%= f.predicted_tickets.to_f.round(1) %></td>
+            <td style="padding:8px; text-align:right; border-bottom:1px solid #f6f8fa"><%= f.predicted_fill_pct.to_f.round(1) %>%</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p>No forecasts in this run.</p>
+  <% end %>
+
+  <div style="margin-top:12px">
+    <%= link_to 'Back', forecasts_path, class: 'btn' %>
+  </div>
+</div>

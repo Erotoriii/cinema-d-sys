@@ -15,6 +15,11 @@ Rails.application.routes.draw do
       patch :close
     end
   end
+  resources :reports, only: [:index, :show, :update] do
+    member do
+      get :download
+    end
+  end
   resources :tickets, only: [:new, :create, :show, :edit, :update, :destroy]
   resources :users, path: 'staff'
   resources :products, only: [:index, :create, :destroy] do
@@ -22,6 +27,8 @@ Rails.application.routes.draw do
       patch :bulk_update
     end
   end
+
+  resources :forecasts, only: [:index, :show]
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -36,5 +43,3 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 end
-
-

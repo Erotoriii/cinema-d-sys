@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Report <%= @report.id %></title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 24px; color: #1f2937; }
+      h1, h2 { margin-bottom: 8px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+      th, td { border: 1px solid #d8e0ea; padding: 8px 10px; }
+      th { background: #f8fafc; }
+    </style>
+  </head>
+  <body>
+    <h1>Report #<%= @report.id %></h1>
+    <p><strong>Cinema:</strong> <%= @report.cinema.name %></p>
+    <p><strong>Worker:</strong> <%= @report.user.name.present? ? @report.user.name : @report.user.email %></p>
+    <p><strong>Shift:</strong> <%= @report.start_time.strftime("%d/%m/%Y %H:%M") %> - <%= @report.end_time.strftime("%d/%m/%Y %H:%M") %></p>
+    <p><strong>Seats sold:</strong> <%= @report.tickets_count || 0 %></p>
+    <p><strong>Profit:</strong> <%= number_to_currency(@report.total_revenue, unit: "₴", precision: 2) %></p>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product</th>
+          <th>Amount</th>
+          <th>Income</th>
+          <th>Sold</th>
+          <th>Unit price</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @report.products_rows.each_with_index do |row, index| %>
+          <tr>
+            <td><%= index + 1 %></td>
+            <td><%= row["name"] %></td>
+            <td><%= row["amount"] %></td>
+            <td><%= number_to_currency(row["income"], unit: "₴", precision: 2) %></td>
+            <td><%= row["sold"] %></td>
+            <td><%= number_to_currency(row["unit_price"], unit: "₴", precision: 2) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </body>
+</html>

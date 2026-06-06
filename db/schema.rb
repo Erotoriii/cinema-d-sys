@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_05_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_06_000000) do
   create_table "cinemas", force: :cascade do |t|
     t.string "address"
     t.integer "company_id", null: false
@@ -25,6 +25,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_000000) do
     t.string "domain_prefix"
     t.string "name"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "forecast_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "horizon_days", default: 1, null: false
+    t.string "model"
+    t.text "params"
+    t.datetime "run_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "forecasts", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "forecast_run_id", null: false
+    t.integer "hall_id", null: false
+    t.decimal "predicted_fill_pct", precision: 5, scale: 2
+    t.decimal "predicted_tickets", precision: 10, scale: 2
+    t.datetime "showtime_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["forecast_run_id"], name: "index_forecasts_on_forecast_run_id"
+    t.index ["hall_id"], name: "index_forecasts_on_hall_id"
   end
 
   create_table "halls", force: :cascade do |t|
@@ -62,6 +83,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_000000) do
 
   create_table "reports", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.text "product_details"
     t.integer "status", default: 0
     t.integer "tickets_count"
     t.decimal "total_revenue"
@@ -127,6 +149,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_000000) do
     t.integer "cinema_id", null: false
     t.datetime "created_at", null: false
     t.datetime "end_time"
+    t.text "product_snapshot"
     t.datetime "start_time"
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
@@ -135,6 +158,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_000000) do
   end
 
   add_foreign_key "cinemas", "companies"
+  add_foreign_key "forecasts", "forecast_runs"
+  add_foreign_key "forecasts", "halls"
   add_foreign_key "halls", "cinemas"
   add_foreign_key "movies", "companies"
   add_foreign_key "products", "cinemas"

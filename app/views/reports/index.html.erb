@@ -1,0 +1,124 @@
+<div class="reports-page">
+  <div class="reports-header">
+    <div>
+      <h1>Звіти</h1>
+      <p>Огляд закритих змін і поточного статусу перевірки.</p>
+    </div>
+  </div>
+
+  <div class="reports-table-frame">
+    <table class="reports-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Початок робочого дня</th>
+          <th>Кінець робочого дня</th>
+          <th>Продано місць</th>
+          <th>Статус</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @reports.each do |report| %>
+          <tr>
+            <td class="reports-icon-cell">
+              <%= link_to report_path(report), class: "report-info-link", title: "Open report" do %>
+                i
+              <% end %>
+            </td>
+            <td><%= report.start_time.strftime("%d/%m/%Y %H:%M:%S") %></td>
+            <td><%= report.end_time.strftime("%d/%m/%Y %H:%M:%S") %></td>
+            <td><%= report.tickets_count || 0 %></td>
+            <td>
+              <span class="status-badge status-<%= report.status %>"><%= report.status_label %></span>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .reports-page {
+    max-width: 1100px;
+    margin: 32px auto;
+    padding: 0 24px;
+  }
+
+  .reports-header h1 {
+    margin: 0;
+    font-size: 2rem;
+  }
+
+  .reports-header p {
+    margin: 8px 0 0;
+    color: #64748b;
+  }
+
+  .reports-table-frame {
+    margin-top: 20px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+  }
+
+  .reports-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .reports-table th,
+  .reports-table td {
+    padding: 18px 20px;
+    border-bottom: 1px solid #edf1f5;
+    text-align: center;
+  }
+
+  .reports-table thead th {
+    background: #fafafa;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .reports-icon-cell {
+    width: 48px;
+  }
+
+  .report-info-link {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid #b8c3d1;
+    color: #64748b;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+
+  .status-pending {
+    background: #fff4e5;
+    color: #b45309;
+  }
+
+  .status-approved {
+    background: #e7f8ed;
+    color: #166534;
+  }
+
+  .status-rejected {
+    background: #fde8e8;
+    color: #b91c1c;
+  }
+</style>

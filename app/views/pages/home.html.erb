@@ -148,4 +148,33 @@
       </div>
     <% end %>
   <% end %>
+
+  <% if @forecasts_preview.present? %>
+    <div style="margin-top:24px; background:#fff; padding:16px; border-radius:8px;">
+      <h3 style="margin:0 0 8px 0;">Прогнози завантаженості (останні запуски)</h3>
+      <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Hall</th>
+            <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Showtime</th>
+            <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Predicted</th>
+            <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Fill %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @forecasts_preview.each do |f| %>
+            <tr>
+              <td style="padding:8px; border-bottom:1px solid #f4f6f8"><%= f.hall.name %></td>
+              <td style="padding:8px; border-bottom:1px solid #f4f6f8"><%= f.showtime_at.strftime("%d/%m %H:%M") %></td>
+              <td style="padding:8px; text-align:right; border-bottom:1px solid #f4f6f8"><%= f.predicted_tickets.to_f.round(1) %></td>
+              <td style="padding:8px; text-align:right; border-bottom:1px solid #f4f6f8"><%= f.predicted_fill_pct.to_f.round(1) %>%</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <div style="margin-top:8px; text-align:right">
+        <%= link_to 'Переглянути всі прогнози', forecasts_path, class: 'btn btn-primary' %>
+      </div>
+    </div>
+  <% end %>
 </div>

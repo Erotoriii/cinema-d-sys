@@ -11,6 +11,7 @@ class WorkdaysController < ApplicationController
       start_time: Time.current,
       end_time: nil
     )
+    @workday.capture_product_snapshot!
 
     if @workday.save
       redirect_to root_path, notice: "Shift started at #{cinema.name}."
