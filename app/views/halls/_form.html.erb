@@ -1,7 +1,7 @@
-<%= form_with(model: hall, local: true) do |form| %>
+<%= form_with(model: hall, local: true, html: { class: 'container' }) do |form| %>
   <% if hall.errors.any? %>
-    <div id="error_explanation">
-      <h2><%= pluralize(hall.errors.count, "error") %> prohibited this hall from being saved:</h2>
+    <div id="error_explanation" class="error_explanation">
+      <h2><%= pluralize(hall.errors.count, "помилок") %> завадили зберегти зал:</h2>
       <ul>
         <% hall.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -10,27 +10,29 @@
     </div>
   <% end %>
 
-  <div class="field">
-    <%= form.label :name %>
-    <%= form.text_field :name, required: true %>
+  <div class="form-grid">
+    <div class="form-group">
+      <%= form.label :name, 'Назва' %>
+      <%= form.text_field :name, required: true %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :cinema_id, 'Кінотеатр' %>
+      <%= form.collection_select :cinema_id, Cinema.where(company_id: current_user.company_id), :id, :name, { prompt: 'Оберіть кінотеатр' }, { required: true } %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :rows, 'Рядків' %>
+      <%= form.number_field :rows, required: true, min: 1 %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :seats_per_row, 'Місць в ряду' %>
+      <%= form.number_field :seats_per_row, required: true, min: 1 %>
+    </div>
   </div>
 
-  <div class="field">
-    <%= form.label :cinema_id %>
-    <%= form.collection_select :cinema_id, Cinema.where(company_id: current_user.company_id), :id, :name, { prompt: "Select a cinema" }, { required: true } %>
-  </div>
-
-  <div class="field">
-    <%= form.label :rows %>
-    <%= form.number_field :rows, required: true, min: 1 %>
-  </div>
-
-  <div class="field">
-    <%= form.label :seats_per_row %>
-    <%= form.number_field :seats_per_row, required: true, min: 1 %>
-  </div>
-
-  <div class="actions">
-    <%= form.submit %>
+  <div class="form-actions">
+    <%= form.submit 'Зберегти', class: 'btn btn-primary' %>
   </div>
 <% end %>

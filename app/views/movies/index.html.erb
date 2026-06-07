@@ -3,7 +3,7 @@
 <%= link_to "Додати новий фільм", new_movie_path, class: "btn btn-primary" %>
 
 <% if @movies.any? %>
-  <table>
+  <table class="table">
     <thead>
       <tr>
         <th>Назва</th>
@@ -19,9 +19,9 @@
           <td><%= movie.duration %></td>
           <td><%= truncate(movie.description, length: 50) %></td>
           <td>
-            <%= link_to "Переглянути", movie_path(movie) %>
-            <%= link_to "Редагувати", edit_movie_path(movie) %>
-            <%= link_to "Видалити", movie_path(movie), data: { turbo_method: :delete, turbo_confirm: "Ви впевнені?" } %>
+            <%= link_to "Переглянути", movie_path(movie), class: 'btn btn-secondary' %>
+            <%= link_to "Редагувати", edit_movie_path(movie), class: 'btn btn-secondary' %>
+            <%= link_to "Видалити", movie_path(movie), data: { turbo_method: :delete, turbo_confirm: "Ви впевнені?" }, class: 'btn btn-danger' %>
           </td>
         </tr>
       <% end %>

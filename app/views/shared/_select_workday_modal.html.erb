@@ -1,0 +1,26 @@
+<dialog id="select-workday-dialog" data-controller="select-workday" data-select-workday-target="dialog" class="select-workday-dialog">
+  <form method="post" action="<%= workdays_path %>" data-action="submit->select-workday#submit" data-select-workday-target="form">
+    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+    <h2>Оберіть зміну</h2>
+    <p>Щоб продовжити, оберіть кінотеатр для поточної зміни.</p>
+
+    <div class="form-group">
+      <label for="workday_cinema_id">Кінотеатр</label>
+      <select name="workday[cinema_id]" id="workday_cinema_id" required>
+        <% Cinema.where(company_id: current_user.company_id).each do |c| %>
+          <option value="<%= c.id %>"><%= c.name %></option>
+        <% end %>
+      </select>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Почати зміну</button>
+    </div>
+  </form>
+</dialog>
+
+<style>
+.select-workday-dialog::backdrop{background:rgba(2,6,23,0.6)}
+.select-workday-dialog{border-radius:10px;padding:20px;width:420px}
+.select-workday-dialog h2{margin-top:0}
+</style>

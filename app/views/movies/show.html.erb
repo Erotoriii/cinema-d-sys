@@ -1,24 +1,26 @@
-<h1><%= @movie.title %></h1>
+<div class="container card">
+  <h1 class="small"><%= @movie.title %></h1>
 
-<div class="movie-details">
-  <p>
-    <strong>Тривалість:</strong>
-    <%= @movie.duration %> хв
-  </p>
+  <div class="movie-details">
+    <p>
+      <strong>Тривалість:</strong>
+      <%= @movie.duration %> хв
+    </p>
 
-  <p>
-    <strong>Опис:</strong>
-    <%= simple_format(@movie.description) %>
-  </p>
+    <p>
+      <strong>Опис:</strong>
+      <%= simple_format(@movie.description) %>
+    </p>
 
-  <p>
-    <strong>Створено:</strong>
-    <%= @movie.created_at.strftime("%B %d, %Y") %>
-  </p>
-</div>
+    <p>
+      <strong>Створено:</strong>
+      <%= @movie.created_at.strftime("%B %d, %Y") %>
+    </p>
+  </div>
 
-<div class="actions">
-  <%= link_to "Редагувати", edit_movie_path(@movie), class: "btn btn-secondary" %>
-  <%= link_to "Видалити", movie_path(@movie), data: { turbo_method: :delete, turbo_confirm: "Ви впевнені?" }, class: "btn btn-danger" %>
-  <%= link_to "Назад до фільмів", movies_path, class: "btn btn-secondary" %>
+  <div class="actions">
+    <%= link_to "Редагувати", edit_movie_path(@movie), class: "btn btn-secondary" %>
+    <%= link_to "Видалити", movie_path(@movie), data: { turbo_method: :delete, turbo_confirm: "Ви впевнені?" }, class: "btn btn-danger" %>
+    <%= link_to "Назад до фільмів", movies_path, class: "btn btn-secondary" %>
+  </div>
 </div>

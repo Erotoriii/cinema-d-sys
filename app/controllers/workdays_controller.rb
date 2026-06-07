@@ -14,9 +14,17 @@ class WorkdaysController < ApplicationController
     @workday.capture_product_snapshot!
 
     if @workday.save
-      redirect_to root_path, notice: "Shift started at #{cinema.name}."
+      # store active workday in session for quick lookup
+      session[:workday_id] = @workday.id
+      respond_to do |format|
+        format.html { redirect_to root_path, notice: "Shift started at #{cinema.name}." }
+        format.json { render json: { success: true, workday_id: @workday.id }, status: :created }
+      end
     else
-      redirect_to root_path, alert: "Failed to start shift."
+      respond_to do |format|
+        format.html { redirect_to root_path, alert: "Failed to start shift." }
+        format.json { render json: { success: false, errors: @workday.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 

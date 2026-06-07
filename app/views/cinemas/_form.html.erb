@@ -1,7 +1,7 @@
-<%= form_with(model: cinema, local: true) do |form| %>
+<%= form_with(model: cinema, local: true, html: { class: 'container' }) do |form| %>
   <% if cinema.errors.any? %>
-    <div id="error_explanation">
-      <h2><%= pluralize(cinema.errors.count, "error") %> prohibited this cinema from being saved:</h2>
+    <div id="error_explanation" class="error_explanation">
+      <h2><%= pluralize(cinema.errors.count, "помилок") %> завадили зберегти кінотеатр:</h2>
       <ul>
         <% cinema.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -10,17 +10,19 @@
     </div>
   <% end %>
 
-  <div class="field">
-    <%= form.label :name %>
-    <%= form.text_field :name, required: true %>
+  <div class="form-grid">
+    <div class="form-group">
+      <%= form.label :name, 'Назва' %>
+      <%= form.text_field :name, required: true %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :address, 'Адреса' %>
+      <%= form.text_field :address, required: true %>
+    </div>
   </div>
 
-  <div class="field">
-    <%= form.label :address %>
-    <%= form.text_field :address, required: true %>
-  </div>
-
-  <div class="actions">
-    <%= form.submit %>
+  <div class="form-actions">
+    <%= form.submit 'Зберегти', class: 'btn btn-primary' %>
   </div>
 <% end %>
