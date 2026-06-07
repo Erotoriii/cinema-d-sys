@@ -12,29 +12,29 @@
   </div>
 
   <div class="report-card">
-    <div class="report-section-header">General</div>
+    <div class="report-section-header">Загальне</div>
     <div class="general-grid">
-      <div><strong>Cinema name:</strong> <%= @report.cinema.name %></div>
-      <div><strong>Cinema address:</strong> <%= @report.cinema.address %></div>
-      <div><strong>Worker name:</strong> <%= @report.user.name.present? ? @report.user.name : @report.user.email %></div>
-      <div><strong>Shift started in:</strong> <%= @report.start_time.strftime("%d/%m/%Y %H:%M") %></div>
-      <div><strong>Shift finished in:</strong> <%= @report.end_time.strftime("%d/%m/%Y %H:%M") %></div>
-      <div><strong>Seats sold:</strong> <%= @report.tickets_count || 0 %></div>
-      <div><strong>Profit:</strong> <%= number_to_currency(@report.total_revenue, unit: "₴", precision: 2) %></div>
+      <div><strong>Кінотеатр:</strong> <%= @report.cinema.name %></div>
+      <div><strong>Адреса:</strong> <%= @report.cinema.address %></div>
+      <div><strong>Працівник:</strong> <%= @report.user.name.present? ? @report.user.name : @report.user.email %></div>
+      <div><strong>Початок зміни:</strong> <%= @report.start_time.strftime("%d/%m/%Y %H:%M") %></div>
+      <div><strong>Кінець зміни:</strong> <%= @report.end_time.strftime("%d/%m/%Y %H:%M") %></div>
+      <div><strong>Продано квитків:</strong> <%= @report.tickets_count || 0 %></div>
+      <div><strong>Дохід:</strong> <%= number_to_currency(@report.total_revenue, unit: "₴", precision: 2) %></div>
     </div>
   </div>
 
   <div class="report-card">
-    <div class="report-section-header">Products</div>
+    <div class="report-section-header">Продажі (товари)</div>
     <table class="products-report-table">
       <thead>
         <tr>
           <th>#</th>
-          <th>Product</th>
-          <th>Amount</th>
-          <th>Income</th>
-          <th>Sold</th>
-          <th>Unit price</th>
+          <th>Продукт</th>
+          <th>Кількість</th>
+          <th>Дохід</th>
+          <th>Продано</th>
+          <th>Ціна за одиницю</th>
         </tr>
       </thead>
       <tbody>

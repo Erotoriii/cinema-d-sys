@@ -1,49 +1,49 @@
 <div class="ticket-details-container">
-  <h1>Ticket Details</h1>
+  <h1>Деталі квитка</h1>
 
   <div class="ticket-card">
     <p>
-      <strong>Showtime:</strong>
+      <strong>Сеанс:</strong>
       <%= link_to @ticket.showtime&.movie&.title, showtime_path(@ticket.showtime) if @ticket.showtime %>
     </p>
 
     <p>
-      <strong>Date and Time:</strong>
+      <strong>Дата і час:</strong>
       <%= @ticket.showtime&.start_time&.strftime("%B %d, %Y at %H:%M") %>
     </p>
 
     <p>
-      <strong>Hall:</strong>
+      <strong>Зал:</strong>
       <%= link_to @ticket.showtime&.hall&.name, hall_path(@ticket.showtime&.hall) if @ticket.showtime&.hall %>
     </p>
 
     <p>
-      <strong>Seat:</strong>
-      Row <%= @ticket.seat&.row %>, Seat <%= @ticket.seat&.number %>
+      <strong>Місце:</strong>
+      Ряд <%= @ticket.seat&.row %>, Місце <%= @ticket.seat&.number %>
     </p>
 
     <p>
-      <strong>Status:</strong>
+      <strong>Статус:</strong>
       <span class="status-badge status-<%= @ticket.status %>">
         <%= @ticket.status.upcase %>
       </span>
     </p>
 
     <p>
-      <strong>Sold on Workday:</strong>
+      <strong>Продано у зміну:</strong>
       <%= link_to @ticket.workday&.id, workday_path(@ticket.workday) if @ticket.workday %>
     </p>
 
     <p>
-      <strong>Created at:</strong>
+      <strong>Створено:</strong>
       <%= @ticket.created_at.strftime("%B %d, %Y at %H:%M") %>
     </p>
   </div>
 
   <div class="actions">
-    <%= link_to "Edit", edit_ticket_path(@ticket), class: "btn btn-secondary" %>
-    <%= button_to "Delete", ticket_path(@ticket), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "btn btn-danger" %>
-    <%= link_to "Back to Seat Map", new_ticket_path(showtime_id: @ticket.showtime_id), class: "btn btn-secondary" %>
+    <%= link_to "Редагувати", edit_ticket_path(@ticket), class: "btn btn-secondary" %>
+    <%= button_to "Видалити", ticket_path(@ticket), method: :delete, data: { turbo_confirm: "Ви впевнені?" }, class: "btn btn-danger" %>
+    <%= link_to "Назад до плану місць", new_ticket_path(showtime_id: @ticket.showtime_id), class: "btn btn-secondary" %>
   </div>
 </div>
 

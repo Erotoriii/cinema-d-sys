@@ -28,7 +28,11 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :forecasts, only: [:index, :show]
+  resources :forecasts, only: [:index, :show] do
+    collection do
+      post :run
+    end
+  end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

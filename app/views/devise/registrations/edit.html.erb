@@ -1,42 +1,42 @@
-<h2>Edit <%= resource_name.to_s.humanize %></h2>
+<h2>Редагувати <%= resource_name.to_s.humanize %></h2>
 
 <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
   <%= render "devise/shared/error_messages", resource: resource %>
 
   <div class="field">
-    <p><%= f.label :email %></p>
+    <p><%= f.label :email, "Електронна пошта" %></p>
     <p><%= f.email_field :email, autofocus: true, autocomplete: "email" %></p>
   </div>
 
   <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-    <div>Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
+    <div>Очікується підтвердження для: <%= resource.unconfirmed_email %></div>
   <% end %>
 
   <div class="field">
-    <p><%= f.label :password %> <i>(leave blank if you don't want to change it)</i></p>
+    <p><%= f.label :password, "Пароль" %> <i>(залиште порожнім, якщо не хочете змінювати)</i></p>
     <p><%= f.password_field :password, autocomplete: "new-password" %></p>
     <% if @minimum_password_length %>
-      <p><em><%= @minimum_password_length %> characters minimum</em></p>
+      <p><em>Мінімум <%= @minimum_password_length %> символів</em></p>
     <% end %>
   </div>
 
   <div class="field">
-    <p><%= f.label :password_confirmation %></p>
+    <p><%= f.label :password_confirmation, "Підтвердження пароля" %></p>
     <p><%= f.password_field :password_confirmation, autocomplete: "new-password" %></p>
   </div>
 
   <div class="field">
-    <p><%= f.label :current_password %> <i>(we need your current password to confirm your changes)</i></p>
+    <p><%= f.label :current_password, "Поточний пароль" %> <i>(потрібен для підтвердження змін)</i></p>
     <p><%= f.password_field :current_password, autocomplete: "current-password" %></p>
   </div>
 
   <div class="actions">
-    <%= f.submit "Update" %>
+    <%= f.submit "Оновити" %>
   </div>
 <% end %>
 
-<h3>Cancel my account</h3>
+<h3>Видалити акаунт</h3>
 
-<div>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete %></div>
+<div>Невдоволені? <%= button_to "Видалити мій акаунт", registration_path(resource_name), data: { confirm: "Ви впевнені?", turbo_confirm: "Ви впевнені?" }, method: :delete %></div>
 
-<%= link_to "Back", :back %>
+<%= link_to "Назад", :back %>

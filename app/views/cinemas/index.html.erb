@@ -1,15 +1,15 @@
-<h1>Cinemas</h1>
+<h1>Кінотеатри</h1>
 
-<%= link_to "Add New Cinema", new_cinema_path, class: "btn btn-primary" %>
+<%= link_to "Додати новий кінотеатр", new_cinema_path, class: "btn btn-primary" %>
 
 <% if @cinemas.any? %>
   <table>
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Address</th>
-        <th>Company</th>
-        <th>Actions</th>
+        <th>Назва</th>
+        <th>Адреса</th>
+        <th>Компанія</th>
+        <th>Дії</th>
       </tr>
     </thead>
     <tbody>
@@ -19,14 +19,14 @@
           <td><%= cinema.address %></td>
           <td><%= cinema.company&.name %></td>
           <td>
-            <%= link_to "Show", cinema_path(cinema) %>
-            <%= link_to "Edit", edit_cinema_path(cinema) %>
-            <%= link_to "Delete", cinema_path(cinema), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" } %>
+            <%= link_to "Переглянути", cinema_path(cinema) %>
+            <%= link_to "Редагувати", edit_cinema_path(cinema) %>
+            <%= link_to "Видалити", cinema_path(cinema), data: { turbo_method: :delete, turbo_confirm: "Ви впевнені?" } %>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
 <% else %>
-  <p>No cinemas found.</p>
+  <p>Кінотеатрів не знайдено.</p>
 <% end %>

@@ -1,41 +1,41 @@
-<h1>Showtime Details</h1>
+<h1>Деталі сеансу</h1>
 
 <div class="showtime-details">
   <p>
-    <strong>Movie:</strong>
+    <strong>Фільм:</strong>
     <%= link_to @showtime.movie&.title, movie_path(@showtime.movie) if @showtime.movie %>
   </p>
 
   <p>
-    <strong>Hall:</strong>
+    <strong>Зал:</strong>
     <%= link_to @showtime.hall&.name, hall_path(@showtime.hall) if @showtime.hall %>
   </p>
 
   <p>
-    <strong>Cinema:</strong>
+    <strong>Кінотеатр:</strong>
     <%= link_to @showtime.hall&.cinema&.name, cinema_path(@showtime.hall&.cinema) if @showtime.hall&.cinema %>
   </p>
 
   <p>
-    <strong>Date:</strong>
+    <strong>Дата:</strong>
     <%= @showtime.start_time.strftime("%B %d, %Y") %>
   </p>
 
   <p>
-    <strong>Time:</strong>
+    <strong>Час:</strong>
     <%= @showtime.start_time.strftime("%H:%M") %>
   </p>
 
   <p>
-    <strong>Created at:</strong>
+    <strong>Створено:</strong>
     <%= @showtime.created_at.strftime("%B %d, %Y at %H:%M") %>
   </p>
 </div>
 
 <div class="actions">
   <% if user_signed_in? && current_user.admin_or_manager? %>
-    <%= link_to "Edit", edit_showtime_path(@showtime), class: "btn btn-secondary" %>
-    <%= button_to "Delete", showtime_path(@showtime), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "btn btn-danger" %>
+    <%= link_to "Редагувати", edit_showtime_path(@showtime), class: "btn btn-secondary" %>
+    <%= button_to "Видалити", showtime_path(@showtime), method: :delete, data: { turbo_confirm: "Ви впевнені?" }, class: "btn btn-danger" %>
   <% end %>
-  <%= link_to "Back to Showtimes", showtimes_path, class: "btn btn-secondary" %>
+  <%= link_to "Назад до сеансів", showtimes_path, class: "btn btn-secondary" %>
 </div>

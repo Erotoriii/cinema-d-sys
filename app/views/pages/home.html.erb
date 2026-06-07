@@ -1,180 +1,356 @@
+<% latest_forecasts = @forecasts_preview || [] %>
+<% grouped_by_movie = latest_forecasts.group_by { |forecast| forecast_movie_title(forecast) } %>
+<% occupancy_values = latest_forecasts.map { |forecast| forecast_occupancy_pct(forecast) } %>
+<% average_occupancy = occupancy_values.any? ? (occupancy_values.sum / occupancy_values.size) : 0 %>
+<% top_forecast = latest_forecasts.max_by { |forecast| forecast_occupancy_pct(forecast) } %>
+
 <style>
-  .dashboard-container {
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 30px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  .dashboard-shell {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px 20px 40px;
   }
 
-  .dashboard-title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    color: #2c3e50;
+  .hero-panel {
+    padding: 28px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #111827 0%, #1f2937 45%, #334155 100%);
+    color: #f8fafc;
+    box-shadow: 0 22px 50px rgba(15, 23, 42, 0.18);
+  }
+
+  .hero-title {
+    margin: 0;
+    font-size: clamp(1.9rem, 4vw, 3rem);
+    letter-spacing: -0.04em;
+  }
+
+  .hero-copy {
+    margin-top: 10px;
+    max-width: 760px;
+    color: rgba(248, 250, 252, 0.82);
+    line-height: 1.55;
+  }
+
+  .hero-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 22px;
+  }
+
+  .metric-card {
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+  }
+
+  .metric-card .label {
+    display: block;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(248, 250, 252, 0.68);
+    margin-bottom: 8px;
+  }
+
+  .metric-card .value {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .workspace-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 24px;
+    margin-top: 24px;
+  }
+
+  .panel {
+    background: #fff;
+    border-radius: 22px;
+    border: 1px solid #e8edf5;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+    padding: 22px;
+  }
+
+  .panel h2,
+  .panel h3 {
+    margin: 0;
+    color: #0f172a;
   }
 
   .shift-banner {
-    padding: 20px;
-    border-radius: 6px;
-    margin-bottom: 20px;
+    padding: 18px;
+    border-radius: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
+    margin-top: 16px;
   }
 
   .shift-banner.active {
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    color: #166534;
   }
 
   .shift-info {
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 1rem;
+    font-weight: 600;
   }
 
   .shift-time {
-    font-size: 13px;
-    color: #666;
-    margin-top: 5px;
-  }
-
-  .form-group {
-    margin-bottom: 15px;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #2c3e50;
-  }
-
-  .form-group select,
-  .form-group input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-
-  .form-group select:focus,
-  .form-group input:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+    font-size: 0.9rem;
+    color: rgba(22, 101, 52, 0.72);
+    margin-top: 4px;
   }
 
   .button-group {
     display: flex;
     gap: 10px;
-    margin-top: 20px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+
+  .form-group {
+    margin-top: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #d8e0ea;
+    border-radius: 12px;
+    font-size: 14px;
+    background: #fff;
   }
 
   .btn {
-    padding: 12px 20px;
+    padding: 12px 18px;
     border: none;
-    border-radius: 4px;
+    border-radius: 999px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: transform 0.15s ease, background-color 0.15s ease;
     text-decoration: none;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
   }
 
   .btn-primary {
-    background-color: #3498db;
-    color: white;
-  }
-
-  .btn-primary:hover {
-    background-color: #2980b9;
+    background: #2563eb;
+    color: #fff;
   }
 
   .btn-danger {
-    background-color: #e74c3c;
-    color: white;
+    background: #dc2626;
+    color: #fff;
   }
 
-  .btn-danger:hover {
-    background-color: #c0392b;
+  .helper-copy {
+    color: #64748b;
+    line-height: 1.5;
   }
 
-  .welcome-message {
-    font-size: 16px;
-    color: #555;
-    margin-bottom: 30px;
+  .movie-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .movie-card {
+    padding: 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e8edf5;
+  }
+
+  .movie-card .movie-name {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 6px;
+  }
+
+  .movie-card .meta {
+    color: #64748b;
+    font-size: 0.92rem;
+    margin-bottom: 10px;
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .summary-list {
+    margin-top: 18px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: #f8fafc;
+    border: 1px solid #e8edf5;
+  }
+
+  .summary-row strong {
+    color: #0f172a;
+  }
+
+  .summary-row span {
+    color: #475569;
+  }
+
+  .empty-state {
+    padding: 18px;
+    border-radius: 16px;
+    background: #f8fafc;
+    color: #475569;
+    border: 1px dashed #cbd5e1;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 980px) {
+    .workspace-grid,
+    .hero-metrics,
+    .movie-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 
-<div class="dashboard-container">
-  <div class="dashboard-title">👤 Staff Dashboard</div>
+<div class="dashboard-shell">
+  <section class="hero-panel">
+    <h1 class="hero-title">Панель співробітника</h1>
+    <p class="hero-copy">Тут видно активну зміну, а також коротку аналітику прогнозованої завантаженості залів за фільмами. Це допомагає швидко зрозуміти, які сеанси можуть бути найбільш навантаженими.</p>
 
-  <div class="welcome-message">
-    Hello, <strong><%= current_user.email %></strong>! Manage your shift below.
-  </div>
-
-  <% if current_workday.present? %>
-    <!-- Active Shift Banner -->
-    <div class="shift-banner active">
-      <div>
-        <div class="shift-info">✅ Active Shift at <strong><%= current_workday.cinema.name %></strong></div>
-        <div class="shift-time">Started: <%= current_workday.start_time.strftime("%H:%M on %B %d, %Y") %></div>
+    <div class="hero-metrics">
+      <div class="metric-card">
+        <span class="label">Користувач</span>
+        <div class="value"><%= current_user.email %></div>
+      </div>
+      <div class="metric-card">
+        <span class="label">Останній запуск</span>
+        <div class="value"><%= @latest_run ? @latest_run.run_at.strftime("%d/%m/%Y %H:%M") : "Немає" %></div>
+      </div>
+      <div class="metric-card">
+        <span class="label">Середня завантаженість</span>
+        <div class="value"><%= latest_forecasts.any? ? "#{average_occupancy.round(1)}%" : "0%" %></div>
       </div>
     </div>
+  </section>
 
-    <!-- End Shift Button -->
-    <div class="button-group">
-      <%= link_to "End Shift", close_workday_path(current_workday), data: { turbo_method: :patch, turbo_confirm: "Are you sure you want to close the shift? This will generate the final report." }, class: "btn btn-danger" %>
-    </div>
-  <% else %>
-    <!-- Start Shift Form -->
-    <div class="welcome-message">
-      You don't have an active shift. Start one below.
-    </div>
+  <div class="workspace-grid">
+    <section class="panel">
+      <h2>Зміна</h2>
+      <% if current_workday.present? %>
+        <div class="shift-banner active">
+          <div>
+            <div class="shift-info">Активна зміна в <strong><%= current_workday.cinema.name %></strong></div>
+            <div class="shift-time">Початок: <%= current_workday.start_time.strftime("%H:%M %d.%m.%Y") %></div>
+          </div>
+        </div>
 
-    <%= form_with url: workdays_path, local: true, method: :post, scope: :workday do |f| %>
-      <div class="form-group">
-        <%= f.label :cinema_id, "Select Cinema" %>
-        <%= f.collection_select :cinema_id, Cinema.where(company_id: current_user.company_id), :id, :name, { prompt: "Choose a cinema" } %>
-      </div>
+        <div class="button-group">
+          <%= link_to "Завершити зміну", close_workday_path(current_workday), data: { turbo_method: :patch, turbo_confirm: "Ви впевнені, що хочете завершити зміну? Це згенерує фінальний звіт." }, class: "btn btn-danger" %>
+        </div>
+      <% else %>
+        <p class="helper-copy">У вас немає активної зміни. Оберіть кінотеатр і почніть її нижче.</p>
 
-      <div class="button-group">
-        <%= f.submit "Start Shift", class: "btn btn-primary" %>
-      </div>
-    <% end %>
-  <% end %>
+        <%= form_with url: workdays_path, local: true, method: :post, scope: :workday do |f| %>
+          <div class="form-group">
+            <%= f.label :cinema_id, "Оберіть кінотеатр" %>
+            <%= f.collection_select :cinema_id, Cinema.where(company_id: current_user.company_id), :id, :name, { prompt: "Оберіть кінотеатр..." } %>
+          </div>
 
-  <% if @forecasts_preview.present? %>
-    <div style="margin-top:24px; background:#fff; padding:16px; border-radius:8px;">
-      <h3 style="margin:0 0 8px 0;">Прогнози завантаженості (останні запуски)</h3>
-      <table style="width:100%; border-collapse:collapse; margin-top:8px;">
-        <thead>
-          <tr>
-            <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Hall</th>
-            <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Showtime</th>
-            <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Predicted</th>
-            <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Fill %</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @forecasts_preview.each do |f| %>
-            <tr>
-              <td style="padding:8px; border-bottom:1px solid #f4f6f8"><%= f.hall.name %></td>
-              <td style="padding:8px; border-bottom:1px solid #f4f6f8"><%= f.showtime_at.strftime("%d/%m %H:%M") %></td>
-              <td style="padding:8px; text-align:right; border-bottom:1px solid #f4f6f8"><%= f.predicted_tickets.to_f.round(1) %></td>
-              <td style="padding:8px; text-align:right; border-bottom:1px solid #f4f6f8"><%= f.predicted_fill_pct.to_f.round(1) %>%</td>
-            </tr>
+          <div class="button-group">
+            <%= f.submit "Почати зміну", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      <% end %>
+    </section>
+
+    <section class="panel">
+      <h2>Прогнози по фільмах</h2>
+      <p class="helper-copy">Коротка зведена статистика для менеджера: який фільм, який зал і яка очікувана завантаженість.</p>
+
+      <% if latest_forecasts.any? %>
+        <div class="movie-grid">
+          <% grouped_by_movie.each do |movie_title, forecasts| %>
+            <% movie_occupancy = forecasts.map { |forecast| forecast_occupancy_pct(forecast) } %>
+            <% avg_movie_occupancy = movie_occupancy.sum / movie_occupancy.size %>
+            <% best_forecast = forecasts.max_by { |forecast| forecast_occupancy_pct(forecast) } %>
+            <div class="movie-card">
+              <div class="movie-name"><%= movie_title %></div>
+              <div class="meta"><%= forecasts.map { |forecast| forecast.hall&.name }.compact.uniq.join(', ') %></div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: <%= [avg_movie_occupancy, 100].min %>%; background: <%= forecast_occupancy_color(avg_movie_occupancy) %>;"></div>
+              </div>
+              <div class="meta" style="margin-top: 8px;">
+                <%= avg_movie_occupancy.round(1) %>% середня завантаженість
+              </div>
+              <% if best_forecast %>
+                <div class="meta">Пік: <%= best_forecast.showtime_at.strftime("%d/%m %H:%M") %> • <%= best_forecast.hall&.name %></div>
+              <% end %>
+            </div>
           <% end %>
-        </tbody>
-      </table>
-      <div style="margin-top:8px; text-align:right">
-        <%= link_to 'Переглянути всі прогнози', forecasts_path, class: 'btn btn-primary' %>
-      </div>
-    </div>
-  <% end %>
+        </div>
+
+        <div class="summary-list">
+          <% latest_forecasts.first(5).each do |forecast| %>
+            <% occupancy = forecast_occupancy_pct(forecast) %>
+            <div class="summary-row">
+              <div>
+                <strong><%= forecast_movie_title(forecast) %></strong>
+                <span> • <%= forecast.hall&.name %> • <%= forecast.showtime_at.strftime("%d/%m %H:%M") %></span>
+              </div>
+              <div><strong><%= forecast.predicted_tickets.to_f.round(1) %></strong> квитків • <%= occupancy.round(1) %>%</div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="empty-state">Поки що немає прогнозів. Запустіть ForecastRunnerJob, щоб отримати аналітику по фільмах і завантаженості залів.</div>
+      <% end %>
+
+      <% if @latest_run %>
+        <div class="button-group" style="margin-top: 18px; justify-content: flex-end;">
+          <%= link_to "Відкрити деталі запуску ##{@latest_run.id}", forecast_path(@latest_run), class: "btn btn-primary" %>
+          <%= link_to "Усі прогнози", forecasts_path, class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </section>
+  </div>
 </div>

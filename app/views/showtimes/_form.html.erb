@@ -25,6 +25,19 @@
     <%= form.datetime_field :start_time, required: true %>
   </div>
 
+  <div class="field" style="margin-top: 16px; padding: 16px; border: 1px solid #dbe4ef; border-radius: 14px; background: #f8fbff;">
+    <h3 style="margin: 0 0 10px; font-size: 1rem; color: #0f172a;">Або створити кілька сеансів одразу</h3>
+    <div class="field" style="margin-bottom: 12px;">
+      <%= form.label :batch_date, "Дата для кількох сеансів" %><br>
+      <%= form.date_field :batch_date, value: showtime.batch_date || Date.current %>
+    </div>
+    <div class="field">
+      <%= form.label :batch_times_text, "Часи і ціни сеансів" %><br>
+      <%= form.text_area :batch_times_text, rows: 5, placeholder: "10:00|120\n12:30|140\n15:45|160\n18:00", style: "width: 100%; max-width: 520px;" %>
+      <div style="color: #64748b; font-size: 0.9rem; margin-top: 6px;">Формат: <strong>HH:MM|ціна</strong>. Ціну можна не вказувати, тоді візьметься базова ціна.</div>
+    </div>
+  </div>
+
   <div class="field" style="margin-bottom: 15px;">
     <%= form.label :price, "Ціна квитка (грн)" %><br>
     <%= form.number_field :price, required: true, min: 0, style: "padding: 5px; width: 150px;" %>

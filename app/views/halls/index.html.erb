@@ -1,14 +1,14 @@
-<h1>Halls</h1>
+<h1>Зали</h1>
 
-<%= link_to "Add New Hall", new_hall_path, class: "btn btn-primary" %>
+<%= link_to "Додати новий зал", new_hall_path, class: "btn btn-primary" %>
 
 <% if @halls.any? %>
   <table>
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Cinema</th>
-        <th>Actions</th>
+        <th>Назва</th>
+        <th>Кінотеатр</th>
+        <th>Дії</th>
       </tr>
     </thead>
     <tbody>
@@ -17,14 +17,14 @@
           <td><%= hall.name %></td>
           <td><%= hall.cinema&.name %></td>
           <td>
-            <%= link_to "Show", hall_path(hall) %>
-            <%= link_to "Edit", edit_hall_path(hall) %>
-            <%= link_to "Delete", hall_path(hall), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" } %>
+            <%= link_to "Переглянути", hall_path(hall) %>
+            <%= link_to "Редагувати", edit_hall_path(hall) %>
+            <%= link_to "Видалити", hall_path(hall), data: { turbo_method: :delete, turbo_confirm: "Ви впевнені?" } %>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
 <% else %>
-  <p>No halls found.</p>
+  <p>Залів не знайдено.</p>
 <% end %>

@@ -36,6 +36,14 @@ class TicketsController < ApplicationController
       return
     end
 
+    showtime = Showtime.find(showtime_id)
+
+    if showtime.start_time < Time.current && !current_user.admin?
+      flash[:alert] = "Тільки адміністратор може додавати квитки до минулих сеансів."
+      redirect_to new_ticket_path(showtime_id: showtime_id)
+      return
+    end
+
     if seat_ids.empty?
       flash[:alert] = "Please select at least one seat."
       redirect_to new_ticket_path(showtime_id: showtime_id)

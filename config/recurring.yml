@@ -9,7 +9,21 @@
 #     priority: 2
 #     schedule: at 5am every day
 
+development:
+  refresh_forecasts:
+    command: "ForecastRunnerJob.perform_later(horizon_days: 7)"
+    queue: default
+    priority: 1
+    schedule: at 3am every day
+
 production:
+  refresh_forecasts:
+    command: "ForecastRunnerJob.perform_later(horizon_days: 7)"
+    queue: default
+    priority: 1
+    schedule: at 3am every day
+
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+    priority: 1
     schedule: every hour at minute 12

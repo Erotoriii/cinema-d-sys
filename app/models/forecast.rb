@@ -1,6 +1,8 @@
 class Forecast < ApplicationRecord
   belongs_to :forecast_run
   belongs_to :hall
+  belongs_to :showtime, optional: true
+  belongs_to :movie, optional: true
 
   validates :showtime_at, presence: true
 

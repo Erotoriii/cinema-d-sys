@@ -2,23 +2,23 @@
 
 <div class="cinema-details">
   <p>
-    <strong>Address:</strong>
+    <strong>Адреса:</strong>
     <%= @cinema.address %>
   </p>
 
   <p>
-    <strong>Company:</strong>
+    <strong>Компанія:</strong>
     <%= @cinema.company&.name %>
   </p>
 
   <p>
-    <strong>Created at:</strong>
+    <strong>Створено:</strong>
     <%= @cinema.created_at.strftime("%B %d, %Y") %>
   </p>
 </div>
 
 <div class="actions">
-  <%= link_to "Edit", edit_cinema_path(@cinema), class: "btn btn-secondary" %>
-  <%= link_to "Delete", cinema_path(@cinema), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "btn btn-danger" %>
-  <%= link_to "Back to Cinemas", cinemas_path, class: "btn btn-secondary" %>
+  <%= link_to "Редагувати", edit_cinema_path(@cinema), class: "btn btn-secondary" %>
+  <%= link_to "Видалити", cinema_path(@cinema), data: { turbo_method: :delete, turbo_confirm: "Ви впевнені?" }, class: "btn btn-danger" %>
+  <%= link_to "Назад до кінотеатрів", cinemas_path, class: "btn btn-secondary" %>
 </div>

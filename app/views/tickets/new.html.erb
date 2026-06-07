@@ -291,18 +291,18 @@
   <div style="display: flex; gap: 2rem;">
     <div style="flex: 1;">
       <div class="booking-header">
-        <h1>Sell Tickets</h1>
+        <h1>Продаж квитків</h1>
         <div class="movie-info">
           <h2><%= @movie.title %></h2>
-          <p class="ticket-price"><strong>Price:</strong> <%= @showtime.price %> UAH</p>
-          <p><strong>Date & Time:</strong> <%= @showtime.start_time.strftime("%B %d, %Y at %H:%M") %></p>
-          <p><strong>Cinema:</strong> <%= @hall.cinema.name %></p>
-          <p><strong>Hall:</strong> <%= @hall.name %></p>
+          <p class="ticket-price"><strong>Ціна:</strong> <%= @showtime.price %> UAH</p>
+          <p><strong>Дата та час:</strong> <%= @showtime.start_time.strftime("%B %d, %Y at %H:%M") %></p>
+          <p><strong>Кінотеатр:</strong> <%= @hall.cinema.name %></p>
+          <p><strong>Зал:</strong> <%= @hall.name %></p>
         </div>
       </div>
 
       <div class="screen-container">
-        <div class="screen">SCREEN</div>
+        <div class="screen">ЕКРАН</div>
       </div>
 
       <%= form_with url: tickets_path, method: :post, local: true, class: "ticket-form" do |form| %>
@@ -314,11 +314,11 @@
         <% @seats.each do |seat| %>
           <% ticket = @tickets_by_seat[seat.id] %>
           <% if ticket && ticket.status != 'cancelled' %>
-            <button type="button" class="seat-label seat-status-<%= ticket.status %>" data-seat-id="<%= seat.id %>" data-ticket-id="<%= ticket.id %>" title="Right-click for options - Seat <%= seat.row %>-<%= seat.number %> (<%= ticket.status %>)">
+            <button type="button" class="seat-label seat-status-<%= ticket.status %>" data-seat-id="<%= seat.id %>" data-ticket-id="<%= ticket.id %>" title="Правий клік — опції: Місце <%= seat.row %>-<%= seat.number %> (<%= ticket.status %>)">
               <div class="seat-text"><%= seat.number %></div>
             </button>
           <% else %>
-            <label class="seat-label" title="Seat <%= seat.row %>-<%= seat.number %>">
+            <label class="seat-label" title="Місце <%= seat.row %>-<%= seat.number %>">
               <%= check_box_tag "ticket[seat_ids][]", seat.id %>
               <div class="seat-text"><%= seat.number %></div>
             </label>
@@ -330,26 +330,26 @@
     <div class="legend">
       <div class="legend-item">
         <div class="legend-box available"></div>
-        <span>Available</span>
+        <span>Доступно</span>
       </div>
       <div class="legend-item">
         <div class="legend-box selected"></div>
-        <span>Selected</span>
+        <span>Вибрано</span>
       </div>
       <div class="legend-item">
         <div class="legend-box sold"></div>
-        <span>Sold</span>
+        <span>Продано</span>
       </div>
       <div class="legend-item">
         <div class="legend-box" style="background-color: #ff9800; border-color: #e65100;"></div>
-        <span>Pending</span>
+        <span>У обробці</span>
       </div>
     </div>
 
     <div class="actions">
-      <p id="total-price-display" style="margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600;">Total Price: 0 UAH</p>
-      <%= form.submit "Sell Selected Tickets", class: "btn btn-primary" %>
-      <%= link_to "Back to Showtimes", showtimes_path, class: "btn btn-secondary" %>
+      <p id="total-price-display" style="margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600;">Загальна сума: 0 UAH</p>
+      <%= form.submit "Продати вибрані квитки", class: "btn btn-primary" %>
+      <%= link_to "Назад до сеансів", showtimes_path, class: "btn btn-secondary" %>
     </div>
       <% end %>
     </div>
@@ -363,15 +363,15 @@
       <div class="stats-panel">
         <div class="stat-item">
           <div class="stat-value"><%= available_seats_count %></div>
-          <div class="stat-label">Available Seats</div>
+          <div class="stat-label">Доступні місця</div>
         </div>
         <div class="stat-item">
           <div class="stat-value"><%= sold_tickets_count %></div>
-          <div class="stat-label">Sold Seats</div>
+          <div class="stat-label">Продані місця</div>
         </div>
         <div class="stat-item">
           <div class="stat-value"><%= total_earned %> UAH</div>
-          <div class="stat-label">Total Revenue</div>
+          <div class="stat-label">Загальний дохід</div>
         </div>
       </div>
     </div>
@@ -380,9 +380,9 @@
 
 <!-- Seat Right-Click Context Menu -->
 <div id="seat-context-menu" class="context-menu" style="display: none; position: fixed; z-index: 1000;">
-  <div class="context-menu-item" data-action="cancelled">Cancel Seat</div>
-  <div class="context-menu-item" data-action="sold">Make Sold</div>
-  <div class="context-menu-item" data-action="pending">Make Pending</div>
+  <div class="context-menu-item" data-action="cancelled">Скасувати місце</div>
+  <div class="context-menu-item" data-action="sold">Позначити як продане</div>
+  <div class="context-menu-item" data-action="pending">Позначити як в обробці</div>
 </div>
 
 <script>
@@ -397,7 +397,7 @@
     function updateTotalPrice() {
       const selectedCount = document.querySelectorAll('.seat-selected').length;
       if (totalPriceDisplay) {
-        totalPriceDisplay.innerText = `Total Price: ${selectedCount * ticketPrice} UAH`;
+        totalPriceDisplay.innerText = `Загальна сума: ${selectedCount * ticketPrice} UAH`;
       }
     }
 
@@ -468,12 +468,12 @@
             if (data.success) {
               location.reload();
             } else {
-              alert('Error: ' + (data.errors ? data.errors.join(', ') : 'Unknown error'));
+              alert('Помилка: ' + (data.errors ? data.errors.join(', ') : 'Невідома помилка'));
             }
           })
           .catch(error => {
             console.error('Error:', error);
-            alert('Error updating ticket: ' + error.message);
+            alert('Помилка оновлення квитка: ' + error.message);
           });
         }
         contextMenu.style.display = 'none';

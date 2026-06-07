@@ -1,15 +1,15 @@
-<h1>Movies</h1>
+<h1>Фільми</h1>
 
-<%= link_to "Add New Movie", new_movie_path, class: "btn btn-primary" %>
+<%= link_to "Додати новий фільм", new_movie_path, class: "btn btn-primary" %>
 
 <% if @movies.any? %>
   <table>
     <thead>
       <tr>
-        <th>Title</th>
-        <th>Duration (min)</th>
-        <th>Description</th>
-        <th>Actions</th>
+        <th>Назва</th>
+        <th>Тривалість (хв)</th>
+        <th>Опис</th>
+        <th>Дії</th>
       </tr>
     </thead>
     <tbody>
@@ -19,14 +19,14 @@
           <td><%= movie.duration %></td>
           <td><%= truncate(movie.description, length: 50) %></td>
           <td>
-            <%= link_to "Show", movie_path(movie) %>
-            <%= link_to "Edit", edit_movie_path(movie) %>
-            <%= link_to "Delete", movie_path(movie), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" } %>
+            <%= link_to "Переглянути", movie_path(movie) %>
+            <%= link_to "Редагувати", edit_movie_path(movie) %>
+            <%= link_to "Видалити", movie_path(movie), data: { turbo_method: :delete, turbo_confirm: "Ви впевнені?" } %>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
 <% else %>
-  <p>No movies found.</p>
+  <p>Фільмів не знайдено.</p>
 <% end %>

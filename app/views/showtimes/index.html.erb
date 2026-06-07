@@ -1,19 +1,444 @@
-<h1>Showtimes Schedule</h1>
+<% showtimes = @showtimes.includes(:movie, :hall => :cinema).to_a %>
+<% grouped_by_date = showtimes.group_by { |showtime| showtime.start_time.to_date } %>
+<% total_showtimes = showtimes.count %>
+<% total_movies = showtimes.map(&:movie_id).uniq.count %>
+<% total_halls = showtimes.map(&:hall_id).uniq.count %>
+<% week_range = if showtimes.any?
+  "#{showtimes.first.start_time.strftime('%d/%m/%Y')} — #{showtimes.last.start_time.strftime('%d/%m/%Y')}"
+else
+  ""
+end %>
+
+<style>
+  .showtimes-dashboard {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .showtimes-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: flex-end;
+    padding: 26px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 54%, #334155 100%);
+    color: #fff;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  }
+
+  .showtimes-hero h1 {
+    margin: 0;
+    font-size: clamp(1.9rem, 3vw, 2.8rem);
+    letter-spacing: -0.04em;
+  }
+
+  .showtimes-hero p {
+    margin: 10px 0 0;
+    color: rgba(255, 255, 255, 0.84);
+    max-width: 760px;
+    line-height: 1.55;
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .metric-card {
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+  }
+
+  .metric-card .label {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.68);
+    margin-bottom: 8px;
+  }
+
+  .metric-card .value {
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  .showtimes-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .run-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 16px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #0f172a;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .run-link:hover {
+    background: #cbd5e1;
+  }
+
+  .calendar-section {
+    margin-top: 24px;
+    padding: 22px;
+    border-radius: 22px;
+    background: #fff;
+    border: 1px solid #e8edf5;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e8edf5;
+  }
+      display: flex;
+      gap: 8px;
+      align-items: center;
+  .section-header h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: #0f172a;
+  }
+
+  .section-header .count {
+    color: #64748b;
+    font-size: 0.95rem;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 14px;
+  }
+
+  .day-column {
+    border-radius: 18px;
+    border: 1px solid #dbe4ef;
+    background: #f8fbff;
+    padding: 14px;
+  }
+
+  .day-column__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5edf6;
+  }
+
+  .day-column__header strong {
+    color: #0f172a;
+    font-size: 0.98rem;
+  }
+
+  .day-column__header span {
+    color: #64748b;
+    font-size: 0.86rem;
+  }
+
+  .session-stack {
+    display: grid;
+    gap: 10px;
+  }
+
+  .session-card {
+    border-radius: 16px;
+    border: 1px solid #d9e6f3;
+    background: #fff;
+    padding: 12px 12px 10px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+  }
+
+  .session-card__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .session-time {
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .session-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #eaf2ff;
+    color: #1d4ed8;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .session-title {
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.25;
+    margin-bottom: 4px;
+  }
+
+  .session-subtitle {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+
+  .session-track {
+    width: 100%;
+    height: 9px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .session-fill {
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .session-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #475569;
+    font-size: 0.84rem;
+  }
+
+  .session-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .session-actions-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+    align-items: center;
+  }
+
+  .session-actions-vertical .small-actions {
+    justify-content: center;
+  }
+
+  .sell-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .btn-cta.w-full {
+    width: 100%;
+    max-width: 220px;
+  }
+
+  .btn-small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
+    border: 1px solid #e6eef7;
+  }
+
+  .btn-small:hover { background: #e2e8f0; }
+
+  .btn-cta {
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #10b981;
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.95rem;
+    border: none;
+  }
+
+  .btn-cta:hover { background: #1e40af; }
+
+  .empty-state {
+    margin-top: 24px;
+    padding: 28px;
+    border-radius: 18px;
+    background: #fff;
+    border: 1px dashed #cbd5e1;
+    color: #475569;
+  }
+
+  @media (max-width: 960px) {
+    .showtimes-hero {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .metric-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="showtimes-dashboard">
+  <div class="showtimes-hero">
+    <div>
+      <h1>Розклад сеансів</h1>
+      <p>Календарний вигляд для швидкого планування сеансів одного фільму на різний час і в різних залах.</p>
+
+      <% if showtimes.any? %>
+        <div class="metric-grid">
+          <div class="metric-card">
+            <span class="label">Період</span>
+            <div class="value"><%= week_range %></div>
+          </div>
+          <div class="metric-card">
+            <span class="label">Сеансів</span>
+            <div class="value"><%= total_showtimes %></div>
+          </div>
+          <div class="metric-card">
+            <span class="label">Фільмів / залів</span>
+            <div class="value"><%= total_movies %> / <%= total_halls %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="showtimes-actions">
+      <% if user_signed_in? && current_user.admin_or_manager? %>
+        <%= link_to "Додати сеанс", new_showtime_path, class: "run-link" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if showtimes.any? %>
+    <section class="calendar-section">
+      <div class="section-header">
+        <h2>Календар сеансів</h2>
+        <div class="count"><%= grouped_by_date.size %> дн.</div>
+      </div>
+
+      <div class="calendar-grid">
+        <% grouped_by_date.sort.each do |date, day_showtimes| %>
+          <div class="day-column">
+            <div class="day-column__header">
+              <strong><%= date.strftime("%d/%m/%Y") %></strong>
+              <span><%= day_showtimes.count %> сеанс(ів)</span>
+            </div>
+
+            <div class="session-stack">
+              <% day_showtimes.sort_by(&:start_time).each do |showtime| %>
+                <% occupancy = 0.0 %>
+                <% total_seats = showtime.hall.rows.to_i * showtime.hall.seats_per_row.to_i %>
+                <% sold = Ticket.where(showtime_id: showtime.id, status: %w[sold Sold]).count %>
+                <% occupancy = total_seats.positive? ? (sold.to_f / total_seats.to_f) * 100.0 : 0.0 %>
+                <% bar_color = case occupancy
+                  when 0...25 then '#16a34a'
+                  when 25...50 then '#f59e0b'
+                  else '#ef4444'
+                end %>
+                <% duration_end = showtime.movie&.duration.present? ? showtime.start_time + showtime.movie.duration.minutes : nil %>
+                <% time_label = duration_end ? "#{showtime.start_time.strftime('%H:%M')} - #{duration_end.strftime('%H:%M')}" : showtime.start_time.strftime('%H:%M') %>
+
+                <article class="session-card">
+                  <div class="session-card__top">
+                    <span class="session-time"><%= time_label %></span>
+                    <span class="session-badge"><%= showtime.hall&.name || "Зал" %></span>
+                  </div>
+
+                  <div class="session-title"><%= showtime.movie&.title %></div>
+                  <div class="session-subtitle"><%= showtime.hall&.cinema&.name || "Кінотеатр" %></div>
+
+                  <div class="session-track">
+                    <div class="session-fill" style="width: <%= [occupancy, 100].min %>%; background: <%= bar_color %>;"></div>
+                  </div>
+
+                  <div class="session-meta">
+                    <span><%= sold %> квитків</span>
+                    <span><%= occupancy.round(1) %>%</span>
+                  </div>
+                  <div class="session-actions-vertical">
+                    <div class="small-actions">
+                      <%= link_to showtime_path(showtime), class: "btn-small", title: "Переглянути", aria: { label: "Переглянути" } do %>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7z" stroke="#0f172a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="#0f172a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      <% end %>
+                      <% if user_signed_in? && current_user.admin_or_manager? %>
+                        <%= link_to edit_showtime_path(showtime), class: "btn-small", title: "Редагувати", aria: { label: "Редагувати" } do %>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 21v-3.75L17.81 2.44a2 2 0 0 1 2.83 0l0 0a2 2 0 0 1 0 2.83L6 20.08H3z" stroke="#0f172a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <% end %>
+                        <%= link_to showtime_path(showtime), method: :delete, data: { turbo_confirm: "Ви впевнені?" }, class: "btn-small btn-delete", title: "Видалити", aria: { label: "Видалити" } do %>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18" stroke="#b91c1c" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="#b91c1c" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6" stroke="#b91c1c" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11v6" stroke="#b91c1c" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="#b91c1c" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <% end %>
+                      <% end %>
+                    </div>
+
+                    <% if current_workday %>
+                      <div class="sell-wrap">
+                        <%= link_to "Продати квиток", new_ticket_path(showtime_id: showtime.id), class: "btn-cta w-full" %>
+                      </div>
+                    <% end %>
+                  </div>
+                </article>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% else %>
+    <div class="empty-state">
+      Поки що немає сеансів.
+    </div>
+  <% end %>
+</div><h1>Розклад сеансів</h1>
 
 <% if user_signed_in? && current_user.admin_or_manager? %>
-  <%= link_to "Add New Showtime", new_showtime_path, class: "btn btn-primary" %>
+  <%= link_to "Додати новий сеанс", new_showtime_path, class: "btn btn-primary" %>
 <% end %>
 
 <% if @showtimes.any? %>
   <table>
     <thead>
       <tr>
-        <th>Date</th>
-        <th>Time</th>
-        <th>Movie Title</th>
-        <th>Hall Name</th>
-        <th>Cinema</th>
-        <th>Actions</th>
+        <th>Дата</th>
+        <th>Час</th>
+        <th>Назва фільму</th>
+        <th>Зал</th>
+        <th>Кінотеатр</th>
+        <th>Дії</th>
       </tr>
     </thead>
     <tbody>
@@ -25,13 +450,13 @@
           <td><%= showtime.hall&.name %></td>
           <td><%= showtime.hall&.cinema&.name %></td>
           <td>
-            <%= link_to "Show", showtime_path(showtime) %>
+            <%= link_to "Переглянути", showtime_path(showtime) %>
             <% if current_workday %>
-              <%= link_to "Sell Tickets", new_ticket_path(showtime_id: showtime.id), class: "btn btn-success" %>
+              <%= link_to "Продати квитки", new_ticket_path(showtime_id: showtime.id), class: "btn btn-success" %>
             <% end %>
             <% if user_signed_in? && current_user.admin_or_manager? %>
-              <%= link_to "Edit", edit_showtime_path(showtime) %>
-              <%= button_to "Delete", showtime_path(showtime), method: :delete, data: { turbo_confirm: "Are you sure?" }, form: { style: "display:inline;" } %>
+              <%= link_to "Редагувати", edit_showtime_path(showtime) %>
+              <%= button_to "Видалити", showtime_path(showtime), method: :delete, data: { turbo_confirm: "Ви впевнені?" }, form: { style: "display:inline;" } %>
             <% end %>
           </td>
         </tr>
@@ -39,6 +464,6 @@
     </tbody>
   </table>
 <% else %>
-  <p>No showtimes scheduled yet.</p>
+  <p>Поки що немає сеансів.</p>
 <% end %>
 

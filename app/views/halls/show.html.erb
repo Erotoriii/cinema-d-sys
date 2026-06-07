@@ -38,18 +38,21 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    align-items: center;
   }
 
   .row-container {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 15px;
+    width: 100%;
   }
 
   .row-label {
     font-weight: bold;
-    min-width: 40px;
-    text-align: right;
+    min-width: 56px;
+    text-align: center;
     font-size: 14px;
     color: #333;
   }
@@ -59,6 +62,7 @@
     gap: 8px;
     justify-content: center;
     flex-wrap: wrap;
+    max-width: 100%;
   }
 
   .seat {
@@ -134,36 +138,36 @@
 
   <div class="hall-details">
     <p>
-      <strong>Cinema:</strong>
+      <strong>Кінотеатр:</strong>
       <%= link_to @hall.cinema&.name, cinema_path(@hall.cinema) if @hall.cinema %>
     </p>
 
     <p>
-      <strong>Configuration:</strong>
-      <%= @hall.rows %> rows × <%= @hall.seats_per_row %> seats per row
+      <strong>Конфігурація:</strong>
+      <%= @hall.rows %> ряд(и) × <%= @hall.seats_per_row %> місць в ряду
     </p>
 
     <p>
-      <strong>Total Seats:</strong>
+      <strong>Всього місць:</strong>
       <%= @hall.seats.count %>
     </p>
 
     <p>
-      <strong>Created at:</strong>
+      <strong>Створено:</strong>
       <%= @hall.created_at.strftime("%B %d, %Y") %>
     </p>
   </div>
 
   <div class="cinema-map">
-    <div class="screen">SCREEN</div>
+  <div class="screen">ЕКРАН</div>
 
     <div class="seating-chart">
       <% @hall.seats.group_by(&:row).sort.each do |row_num, seats| %>
         <div class="row-container">
-          <div class="row-label">Row <%= row_num %></div>
+          <div class="row-label">Ряд <%= row_num %></div>
           <div class="row-seats">
             <% seats.sort_by(&:number).each do |seat| %>
-              <div class="seat <%= seat.status %>" title="Row <%= seat.row %>, Seat <%= seat.number %>">
+              <div class="seat <%= seat.status %>" title="Ряд <%= seat.row %>, Місце <%= seat.number %>">
                 <%= seat.number %>
               </div>
             <% end %>
@@ -175,22 +179,49 @@
     <div class="legend">
       <div class="legend-item">
         <div class="legend-seat" style="background-color: #4CAF50; border-color: #45a049;"></div>
-        <span>Available</span>
+        <span>Доступно</span>
       </div>
       <div class="legend-item">
         <div class="legend-seat" style="background-color: #f44336; border-color: #da190b;"></div>
-        <span>Reserved</span>
+        <span>Зарезервовано</span>
       </div>
       <div class="legend-item">
         <div class="legend-seat" style="background-color: #999; border-color: #666;"></div>
-        <span>Sold</span>
+        <span>Продано</span>
       </div>
     </div>
   </div>
 
+  <div class="hall-details" style="border-bottom: none;">
+    <h2 style="margin-bottom: 16px;">Розклад у цьому залі</h2>
+
+    <% if @hall.showtimes.includes(:movie).any? %>
+      <table style="width:100%; border-collapse: collapse; background: #fff;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding: 10px; border-bottom: 1px solid #ddd;">Фільм</th>
+            <th style="text-align:left; padding: 10px; border-bottom: 1px solid #ddd;">Дата і час</th>
+            <th style="text-align:left; padding: 10px; border-bottom: 1px solid #ddd;">Ціна</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @hall.showtimes.includes(:movie).order(:start_time).each do |showtime| %>
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #f0f0f0;"><%= showtime.movie&.title %></td>
+              <td style="padding: 10px; border-bottom: 1px solid #f0f0f0;"><%= showtime.start_time.strftime("%d/%m/%Y %H:%M") %></td>
+              <td style="padding: 10px; border-bottom: 1px solid #f0f0f0;"><%= number_to_currency(showtime.price, unit: "₴", precision: 2) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p style="color: #666; margin: 0;">У цьому залі ще немає запланованих сеансів.</p>
+    <% end %>
+  </div>
+
   <div class="actions">
-    <%= link_to "Edit", edit_hall_path(@hall), class: "btn btn-secondary" %>
-    <%= link_to "Delete", hall_path(@hall), data: { turbo_method: :delete, turbo_confirm: "Are you sure?" }, class: "btn btn-danger" %>
-    <%= link_to "Back to Halls", halls_path, class: "btn btn-secondary" %>
+    <%= link_to "Редагувати", edit_hall_path(@hall), class: "btn btn-secondary" %>
+    <%= link_to "Видалити", hall_path(@hall), data: { turbo_method: :delete, turbo_confirm: "Ви впевнені?" }, class: "btn btn-danger" %>
+    <%= link_to "Назад до залів", halls_path, class: "btn btn-secondary" %>
   </div>
 </div>

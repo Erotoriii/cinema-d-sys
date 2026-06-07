@@ -1,15 +1,15 @@
 <div class="forecast-run-page">
-  <h1>Forecast Run #<%= @run.id %></h1>
-  <p>Run at: <%= @run.run_at.strftime("%d/%m/%Y %H:%M") %> — horizon: <%= @run.horizon_days %> days — model: <%= @run.model %></p>
+  <h1>Запуск прогнозу #<%= @run.id %></h1>
+  <p>Запущено: <%= @run.run_at.strftime("%d/%m/%Y %H:%M") %> — горизонт: <%= @run.horizon_days %> днів — модель: <%= @run.model %></p>
 
   <% if @forecasts.any? %>
     <table style="width:100%; border-collapse:collapse; margin-top:12px;">
       <thead>
         <tr>
-          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Hall</th>
-          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Showtime</th>
-          <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Predicted Tickets</th>
-          <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Fill %</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Зал</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Сеанс</th>
+          <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Прогноз (квитки)</th>
+          <th style="text-align:right; padding:8px; border-bottom:1px solid #eee">Заповненість %</th>
         </tr>
       </thead>
       <tbody>
@@ -24,10 +24,10 @@
       </tbody>
     </table>
   <% else %>
-    <p>No forecasts in this run.</p>
+    <p>Немає прогнозів у цьому запуску.</p>
   <% end %>
 
   <div style="margin-top:12px">
-    <%= link_to 'Back', forecasts_path, class: 'btn' %>
+    <%= link_to 'Назад', forecasts_path, class: 'btn' %>
   </div>
 </div>

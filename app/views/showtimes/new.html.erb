@@ -1,6 +1,37 @@
-<h1>Add New Showtime</h1>
+<h1>Додати сеанс</h1>
+<p style="color: #64748b; margin-top: 6px;">Можна створити один сеанс або одразу кілька сеансів одного фільму на різний час.</p>
 
 <%= render "form", showtime: @showtime %>
+
+<% if defined?(@existing_showtimes) && @existing_showtimes.any? %>
+  <div style="margin-top: 28px; padding: 20px; border: 1px solid #dbe4ef; border-radius: 16px; background: #fff;">
+    <h2 style="margin-top: 0;">Інші сеанси в розкладі</h2>
+    <p style="color: #64748b; margin-top: 0;">Це допомагає не ставити новий сеанс поверх уже запланованого в тому самому залі.</p>
+
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Дата</th>
+          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Час</th>
+          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Фільм</th>
+          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Зал</th>
+          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Ціна</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @existing_showtimes.each do |existing| %>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= existing.start_time.strftime("%d/%m/%Y") %></td>
+            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= existing.start_time.strftime("%H:%M") %></td>
+            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= existing.movie&.title %></td>
+            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= existing.hall&.name %></td>
+            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= number_to_currency(existing.price, unit: "₴", precision: 2) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
 
 <div class="actions">
   <%= link_to "Back to Showtimes", showtimes_path, class: "btn btn-secondary" %>

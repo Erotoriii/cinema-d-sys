@@ -1,32 +1,248 @@
-<div class="forecasts-page">
-  <h1>Forecast Runs</h1>
+<% latest_run = @runs.first %>
+<% latest_forecasts = defined?(@latest_forecasts) ? @latest_forecasts : (latest_run ? latest_run.forecasts.includes(:hall, :movie, showtime: :movie).sort_by(&:showtime_at) : []) %>
 
-  <% if @runs.any? %>
-    <table style="width:100%; border-collapse:collapse; margin-top:12px;">
-      <thead>
-        <tr>
-          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Run</th>
-          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Run at</th>
-          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Horizon (days)</th>
-          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Model</th>
-          <th style="text-align:left; padding:8px; border-bottom:1px solid #eee">Forecasts</th>
-          <th style="text-align:right; padding:8px; border-bottom:1px solid #eee"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @runs.each do |run| %>
-          <tr>
-            <td style="padding:8px; border-bottom:1px solid #f6f8fa">#<%= run.id %></td>
-            <td style="padding:8px; border-bottom:1px solid #f6f8fa"><%= run.run_at.strftime("%d/%m/%Y %H:%M") %></td>
-            <td style="padding:8px; border-bottom:1px solid #f6f8fa"><%= run.horizon_days %></td>
-            <td style="padding:8px; border-bottom:1px solid #f6f8fa"><%= run.model %></td>
-            <td style="padding:8px; border-bottom:1px solid #f6f8fa"><%= run.forecasts.count %></td>
-            <td style="padding:8px; text-align:right; border-bottom:1px solid #f6f8fa"><%= link_to 'View', forecast_path(run), class: 'btn btn-primary' %></td>
-          </tr>
+<style>
+  .forecast-dashboard {
+    max-width: 100%;
+    margin: 0;
+    padding: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  .forecast-header {
+    padding: 12px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .forecast-header h1 {
+    margin: 0 0 6px 0;
+    font-size: 1.3rem;
+    color: #1f2937;
+  }
+
+  .forecast-header p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+  }
+
+  .forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+  }
+
+  .forecast-card {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    padding: 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .forecast-card:hover {
+    border-color: #9ca3af;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
+  .card-time {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #111827;
+  }
+
+  .card-hall {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+  }
+
+  .card-movie {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1f2937;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .card-cinema {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 10px;
+  }
+
+  .card-main {
+    padding: 10px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+
+  .card-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .card-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #1f2937;
+  }
+
+  .card-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .card-fill {
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .card-occupancy {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+
+  .last-update {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 8px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 8px;
+  }
+
+  .empty-state {
+    padding: 32px 16px;
+    text-align: center;
+    color: #6b7280;
+    background: #f9fafb;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 768px) {
+    .forecast-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="forecast-dashboard">
+  <div class="forecast-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1>Прогноз завантаженості (7 днів)</h1>
+        <p>Очікувана кількість глядачів за фільмом, часом показу і днем тижня</p>
+      </div>
+      <div>
+        <%= button_to "🔄 Оновити прогнози (Ручний запуск)", run_forecasts_path, method: :post, class: "px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition duration-200" %>
+      </div>
+    </div>
+  </div>
+
+  <% if latest_run && latest_forecasts.any? %>
+    <div class="forecast-grid" id="forecast-grid">
+      <% latest_forecasts.sort_by(&:showtime_at).each do |forecast| %>
+        <% occupancy = forecast_occupancy_pct(forecast) %>
+        <% bar_color = forecast_occupancy_color(occupancy) %>
+        <% title = forecast_movie_title(forecast) %>
+        <% exact_showtime = forecast_showtime_for(forecast) %>
+        <% time_label = forecast.showtime_at.strftime("%H:%M") %>
+        <% if exact_showtime && exact_showtime.movie&.duration.present? %>
+          <% ends_at = exact_showtime.start_time + exact_showtime.movie.duration.minutes %>
+          <% time_label = "#{exact_showtime.start_time.strftime('%H:%M')} - #{ends_at.strftime('%H:%M')}" %>
         <% end %>
-      </tbody>
-    </table>
+
+        <div class="forecast-card">
+          <div class="card-header">
+            <div class="card-time"><%= time_label %></div>
+            <span class="card-hall"><%= forecast.hall&.name || "Зал" %></span>
+          </div>
+
+          <div class="card-movie"><%= title %></div>
+          <div class="card-cinema"><%= forecast.hall&.cinema&.name || "Кінотеатр" %></div>
+
+          <div class="card-main">
+            <div class="card-label">Очікувано</div>
+            <div class="card-value">
+              <%= forecast.predicted_tickets.to_f.round(0).to_i %> квитків
+            </div>
+          </div>
+
+          <div class="card-bar">
+            <div class="card-fill" style="width: <%= [occupancy, 100].min %>%; background: <%= bar_color %>;"></div>
+          </div>
+
+          <div class="card-occupancy">
+            <span><%= forecast.showtime_at.strftime("%d/%m") %></span>
+            <span><%= occupancy.round(0).to_i %>% залу</span>
+          </div>
+
+          <div class="last-update">
+            <%= latest_run.run_at.strftime("%d/%m %H:%M") %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <script>
+      (function() {
+        const gridEl = document.getElementById('forecast-grid');
+        if (!gridEl) return;
+        
+        function refreshForecasts() {
+          fetch(window.location.href, { headers: { 'Accept': 'text/html' } })
+            .then(r => r.text())
+            .then(html => {
+              const newDoc = new DOMParser().parseFromString(html, 'text/html');
+              const newGrid = newDoc.getElementById('forecast-grid');
+              if (newGrid) {
+                gridEl.innerHTML = newGrid.innerHTML;
+              }
+            })
+            .catch(err => console.log('Error:', err));
+        }
+
+        // Обновлювати кожні 60 сек (1 хв)
+        setInterval(refreshForecasts, 60000);
+
+        // Обновити при поверненні на вкладку
+        document.addEventListener('visibilitychange', function() {
+          if (!document.hidden) {
+            refreshForecasts();
+          }
+        });
+      })();
+    </script>
+
   <% else %>
-    <p>No forecast runs yet. Run <code>ForecastRunnerJob</code> to generate forecasts.</p>
+    <div class="empty-state">
+      <strong>Прогнози ще не згенеровані</strong>
+      <div>Запустіть ForecastRunnerJob</div>
+    </div>
   <% end %>
 </div>
