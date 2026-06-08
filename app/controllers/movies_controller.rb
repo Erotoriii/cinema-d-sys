@@ -1,6 +1,6 @@
 class MoviesController < ApplicationController
   before_action :set_movie, only: [:show, :edit, :update, :destroy]
-  before_action :authorize_movie_access!, only: [:new, :create, :edit, :update, :destroy]
+  before_action :authorize_manager!
   # GET /movies
   def index
     @movies = Movie.where(company_id: current_user.company_id, deleted_at: nil)
@@ -51,7 +51,7 @@ class MoviesController < ApplicationController
   private
 
   def set_movie
-    @movie = Movie.find(params[:id])
+    @movie = Movie.where(company_id: current_user.company_id, deleted_at: nil).find(params[:id])
   end
 
   def movie_params

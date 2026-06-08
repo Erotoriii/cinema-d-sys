@@ -17,9 +17,9 @@ class ApplicationController < ActionController::Base
     redirect_to root_path, alert: "У вас недостатньо прав для цієї дії." unless current_user.admin? || current_user.manager?
   end
 
-  # Метод для перевірки, чи може користувач керувати фільмами (всі аутентифіковані користувачі)
+  # Метод для перевірки, чи може користувач керувати фільмами (адмін або менеджер)
   def authorize_movie_access!
-    redirect_to root_path, alert: "У вас недостатньо прав для цієї дії." unless user_signed_in?
+    redirect_to root_path, alert: "У вас недостатньо прав для цієї дії." unless current_user&.admin_or_manager?
   end
 
   # Returns the active workday (shift) for the current user
