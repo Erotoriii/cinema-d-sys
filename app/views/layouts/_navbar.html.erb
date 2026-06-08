@@ -140,7 +140,7 @@
       <li><a href="<%= showtimes_path %>" class="<%= 'active' if current_page?(showtimes_path) %>">Розклад</a></li>
       <li><a href="<%= products_path %>" class="<%= 'active' if current_page?(products_path) %>">Продукти</a></li>
       <% if user_signed_in? && current_user.admin_or_manager? %>
-        <li><a href="<%= reports_path %>" class="<%= 'active' if current_page?(reports_path) %>">Reports</a></li>
+        <li><a href="<%= reports_path %>" class="<%= 'active' if current_page?(reports_path) %>">Звіти</a></li>
       <% end %>
 
       <% if user_signed_in? && current_user.admin? %>

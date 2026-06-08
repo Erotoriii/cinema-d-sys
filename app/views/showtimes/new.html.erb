@@ -1,38 +1,98 @@
-<h1>Додати сеанс</h1>
-<p style="color: #64748b; margin-top: 6px;">Можна створити один сеанс або одразу кілька сеансів одного фільму на різний час.</p>
-
-<%= render "form", showtime: @showtime %>
-
-<% if defined?(@existing_showtimes) && @existing_showtimes.any? %>
-  <div style="margin-top: 28px; padding: 20px; border: 1px solid #dbe4ef; border-radius: 16px; background: #fff;">
-    <h2 style="margin-top: 0;">Інші сеанси в розкладі</h2>
-    <p style="color: #64748b; margin-top: 0;">Це допомагає не ставити новий сеанс поверх уже запланованого в тому самому залі.</p>
-
-    <table style="width: 100%; border-collapse: collapse;">
-      <thead>
-        <tr>
-          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Дата</th>
-          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Час</th>
-          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Фільм</th>
-          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Зал</th>
-          <th style="text-align: left; padding: 10px; border-bottom: 1px solid #e5edf6;">Ціна</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @existing_showtimes.each do |existing| %>
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= existing.start_time.strftime("%d/%m/%Y") %></td>
-            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= existing.start_time.strftime("%H:%M") %></td>
-            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= existing.movie&.title %></td>
-            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= existing.hall&.name %></td>
-            <td style="padding: 10px; border-bottom: 1px solid #f0f4f9;"><%= number_to_currency(existing.price, unit: "₴", precision: 2) %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+  <div class="mb-8">
+    <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Додати сеанси</h1>
+    <p class="mt-2 max-w-3xl text-sm text-slate-600">Створіть один сеанс або заплануйте пакет сеансів у межах діапазону дат.</p>
   </div>
-<% end %>
 
-<div class="actions">
-  <%= link_to "Back to Showtimes", showtimes_path, class: "btn btn-secondary" %>
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold text-slate-900">Один сеанс</h2>
+        <p class="mt-1 text-sm text-slate-500">Використовуйте цю форму для створення одного сеансу.</p>
+      </div>
+
+      <%= form_with model: @showtime, url: showtimes_path, local: true, class: "space-y-5" do |form| %>
+        <% if @showtime.errors.any? %>
+          <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <p class="font-medium"><%= pluralize(@showtime.errors.count, "помилка") %> завадили зберегти цей сеанс:</p>
+            <ul class="mt-2 list-disc pl-5">
+              <% @showtime.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <div>
+          <%= form.label :movie_id, "Фільм", class: "mb-1 block text-sm font-medium text-slate-700" %>
+          <%= form.collection_select :movie_id, @movies, :id, :title, { prompt: "Оберіть фільм" }, { class: "block w-full rounded-xl border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500" } %>
+        </div>
+
+        <div>
+          <%= form.label :hall_id, "Зал", class: "mb-1 block text-sm font-medium text-slate-700" %>
+          <%= form.collection_select :hall_id, @halls, :id, :name, { prompt: "Оберіть зал" }, { class: "block w-full rounded-xl border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500" } %>
+        </div>
+
+        <div>
+          <%= form.label :start_time, "Час початку", class: "mb-1 block text-sm font-medium text-slate-700" %>
+          <%= form.datetime_field :start_time, class: "block w-full rounded-xl border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500" %>
+        </div>
+
+        <div>
+          <%= form.label :price, "Ціна", class: "mb-1 block text-sm font-medium text-slate-700" %>
+          <%= form.number_field :price, step: "0.01", min: 0, class: "block w-full rounded-xl border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500" %>
+        </div>
+
+        <div>
+          <%= form.submit "Створити сеанс", class: "inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700" %>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold text-slate-900">Пакетне створення</h2>
+        <p class="mt-1 text-sm text-slate-500">Створюйте однаковий розклад на кілька дат одним запитом.</p>
+      </div>
+
+      <%= form_with scope: :batch_showtime, url: create_batch_showtimes_path, local: true, class: "space-y-5" do |form| %>
+        <div>
+          <%= form.label :movie_id, "Фільм", class: "mb-1 block text-sm font-medium text-slate-700" %>
+          <%= form.collection_select :movie_id, @movies, :id, :title, { prompt: "Оберіть фільм" }, { class: "block w-full rounded-xl border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500" } %>
+        </div>
+
+        <div>
+          <%= form.label :hall_id, "Зал", class: "mb-1 block text-sm font-medium text-slate-700" %>
+          <%= form.collection_select :hall_id, @halls, :id, :name, { prompt: "Оберіть зал" }, { class: "block w-full rounded-xl border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500" } %>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <%= form.label :start_date, "Дата початку", class: "mb-1 block text-sm font-medium text-slate-700" %>
+            <%= form.date_field :start_date, class: "block w-full rounded-xl border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500" %>
+          </div>
+
+          <div>
+            <%= form.label :end_date, "Дата завершення", class: "mb-1 block text-sm font-medium text-slate-700" %>
+            <%= form.date_field :end_date, class: "block w-full rounded-xl border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500" %>
+          </div>
+        </div>
+
+        <div>
+          <%= form.label :base_price, "Базова ціна", class: "mb-1 block text-sm font-medium text-slate-700" %>
+          <%= form.number_field :base_price, step: "0.01", min: 0, class: "block w-full rounded-xl border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500" %>
+        </div>
+
+        <div>
+          <%= form.label :schedule_text, "Текст розкладу", class: "mb-1 block text-sm font-medium text-slate-700" %>
+          <%= form.text_area :schedule_text, rows: 6, placeholder: "10:00|120\n12:30|140\n15:45", class: "block w-full rounded-xl border-slate-300 font-mono shadow-sm focus:border-slate-500 focus:ring-slate-500" %>
+          <p class="mt-2 text-sm text-slate-500">По одному сеансу в рядку. Формат: <span class="font-medium">HH:MM|ціна</span>. Якщо ціну не вказано, буде використано базову ціну.</p>
+        </div>
+
+        <div>
+          <%= form.submit "Створити пакет", class: "inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500" %>
+        </div>
+      <% end %>
+    </section>
+  </div>
 </div>

@@ -9,7 +9,11 @@ Rails.application.routes.draw do
   resources :movies
   resources :cinemas
   resources :halls
-  resources :showtimes
+  resources :showtimes do
+    collection do
+      post :create_batch
+    end
+  end
   resources :workdays do
     member do
       patch :close

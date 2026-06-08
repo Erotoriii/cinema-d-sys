@@ -338,6 +338,14 @@ end %>
     </div>
 
     <div class="showtimes-actions">
+      <% if user_signed_in? && current_user.admin? %>
+        <% if @showing_past_showtimes %>
+          <%= link_to "Поточний розклад", showtimes_path, class: "run-link" %>
+        <% else %>
+          <%= link_to "Показати минулі сеанси", showtimes_path(past: 1), class: "run-link" %>
+        <% end %>
+      <% end %>
+
       <% if user_signed_in? && current_user.admin_or_manager? %>
         <%= link_to "Додати сеанс", new_showtime_path, class: "run-link" %>
       <% end %>
