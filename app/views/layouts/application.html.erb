@@ -25,8 +25,8 @@
 
   <body>
     <%= render 'layouts/navbar' %>
-    <%# Force shift selection for staff and managers without an active workday %>
-    <% if user_signed_in? && (current_user.staff? || current_user.manager?) && current_workday.nil? %>
+    <%# Force shift selection for staff/admin/manager users without an active workday %>
+    <% if user_signed_in? && (current_user.staff? || current_user.manager? || current_user.admin?) && current_workday.nil? %>
       <%= render 'shared/select_workday_modal' %>
     <% end %>
 

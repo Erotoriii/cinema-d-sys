@@ -2,18 +2,10 @@ require 'matrix'
 
 module Forecasting
   class RegressionTrainer
-    # rows: array of hashes with keys :occupancy_pct, :movie_popularity, :days_since_release, :is_weekend, :is_evening
+    # rows: array of hashes with keys :occupancy_pct, :movie_popularity, :start_time, :movie_id, :hall_id, :release_date, :is_weekend, :is_morning, :is_afternoon, :is_evening
     # occupancy_pct must be a float between 0.0 and 1.0 (not 0-100)
     def initialize(rows)
-      @rows = rows.map do |r|
-        {
-          occupancy_pct: r[:occupancy_pct].to_f,
-          movie_popularity: r[:movie_popularity].to_f,
-          days_since_release: (r[:days_since_release] || 0).to_f,
-          is_weekend: (r[:is_weekend] ? 1.0 : 0.0),
-          is_evening: (r[:is_evening] ? 1.0 : 0.0)
-        }
-      end
+      @rows = rows
     end
 
     # ridge: regularization strength (lambda). If nil or 0 -> plain OLS
@@ -21,12 +13,12 @@ module Forecasting
       # Minimal data requirement
       return nil if @rows.size < 6
 
-      feature_names = %i[movie_popularity days_since_release is_weekend is_evening]
+      feature_names = self.class.feature_names
 
-      x_raw = @rows.map do |r|
-        feature_names.map { |k| r[k].to_f }
+      x_raw = @rows.map do |row|
+        feature_vector(row).values_at(*feature_names)
       end
-      y = Vector.elements(@rows.map { |r| r[:occupancy_pct] })
+      y = Vector.elements(@rows.map { |r| r[:occupancy_pct].to_f })
 
       # standardize features (mean/std)
       means = []
@@ -88,13 +80,78 @@ module Forecasting
     def predict(model, features)
       return nil if model.nil? || model[:coefs].nil?
       coefs = model[:coefs]
-      # features expected: movie_popularity, days_since_release, is_weekend, is_evening
-      vec = [1.0,
-             features[:movie_popularity].to_f,
-             (features[:days_since_release] || 0).to_f,
-             (features[:is_weekend] ? 1.0 : 0.0),
-             (features[:is_evening] ? 1.0 : 0.0)]
+      feature_vector = feature_vector(features)
+      vec = [1.0] + self.class.feature_names.map { |name| feature_vector[name].to_f }
       vec.zip(coefs).map { |a, b| a * b.to_f }.sum
+    end
+
+    def self.feature_names
+      %i[movie_popularity days_since_release lag_feature is_weekend is_morning is_afternoon is_evening]
+    end
+
+    private
+
+    def feature_vector(row)
+      row = row || {}
+
+      {
+        movie_popularity: row[:movie_popularity].to_f,
+        days_since_release: days_since_release_for(row),
+        lag_feature: lag_feature_for(row),
+        is_weekend: flag_value(row[:is_weekend]),
+        is_morning: flag_value(row[:is_morning]),
+        is_afternoon: flag_value(row[:is_afternoon]),
+        is_evening: flag_value(row[:is_evening])
+      }
+    end
+
+    def flag_value(value)
+      return 0.0 if value.nil?
+      return 1.0 if value == true
+      return 0.0 if value == false
+
+      return value.to_f > 0.0 ? 1.0 : 0.0 if value.is_a?(Numeric)
+
+      normalized = value.to_s.strip.downcase
+      return 1.0 if %w[1 true t yes y].include?(normalized)
+
+      0.0
+    end
+
+    def days_since_release_for(row)
+      start_time = row[:start_time]
+      release_date = row[:release_date] || movie_release_date_for(row[:movie_id])
+
+      return (row[:days_since_release] || 0).to_f if start_time.blank? || release_date.blank?
+
+      [(start_time.to_date - release_date.to_date).to_i, 0].max.to_f
+    end
+
+    def movie_release_date_for(movie_id)
+      return nil if movie_id.blank?
+
+      movie = Movie.find_by(id: movie_id)
+      return nil if movie.nil?
+
+      movie.try(:release_date) || movie.created_at
+    end
+
+    def lag_feature_for(row)
+      return (row[:lag_feature] || 0).to_f if row[:lag_feature]
+
+      start_time = row[:start_time]
+      movie_id = row[:movie_id]
+      hall_id = row[:hall_id]
+
+      return 0.0 if start_time.blank? || movie_id.blank? || hall_id.blank?
+
+      target_time = start_time - 7.days
+      historical_showtime = Showtime.where(movie_id: movie_id, hall_id: hall_id)
+                                    .where('start_time <= ?', target_time)
+                                    .order(start_time: :desc)
+                                    .first
+
+      historical_showtime ? historical_showtime.tickets.count.to_f : 0.0
     end
   end
 end

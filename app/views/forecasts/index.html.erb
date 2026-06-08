@@ -1,5 +1,6 @@
 <% latest_run = @runs.first %>
 <% latest_forecasts = defined?(@latest_forecasts) ? @latest_forecasts : (latest_run ? latest_run.forecasts.includes(:hall, :movie, showtime: :movie).sort_by(&:showtime_at) : []) %>
+<% forecasts_by_date = defined?(@forecasts_by_date) ? @forecasts_by_date : latest_forecasts.group_by { |forecast| forecast.showtime_at.to_date } %>
 
 <style>
   .forecast-dashboard {
@@ -7,146 +8,239 @@
     margin: 0;
     padding: 16px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #111827;
   }
 
   .forecast-header {
-    padding: 12px 0;
-    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 0;
+    margin-bottom: 18px;
     border-bottom: 1px solid #e5e7eb;
   }
 
   .forecast-header h1 {
     margin: 0 0 6px 0;
-    font-size: 1.3rem;
+    font-size: 1.75rem;
     color: #1f2937;
   }
 
   .forecast-header p {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: #6b7280;
   }
 
-  .forecast-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 12px;
-  }
-
-  .forecast-card {
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    background: #fff;
-    padding: 14px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  .forecast-toolbar {
     display: flex;
     flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
   }
 
-  .forecast-card:hover {
-    border-color: #9ca3af;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  .forecast-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
   }
 
-  .card-header {
+  .summary-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  }
+
+  .summary-label {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+
+  .summary-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.1;
+  }
+
+  .summary-note {
+    margin-top: 8px;
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+
+  .date-group {
+    margin-bottom: 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  }
+
+  .date-group-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-    gap: 8px;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(90deg, #111827 0%, #1f2937 100%);
+    color: #fff;
   }
 
-  .card-time {
+  .date-group-header .date-title {
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .date-group-header .date-meta {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .forecast-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .forecast-table th,
+  .forecast-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #eef2f7;
+    vertical-align: middle;
+  }
+
+  .forecast-table th {
+    background: #f9fafb;
+    text-align: left;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+  }
+
+  .forecast-table tbody tr:hover {
+    background: #f9fafb;
+  }
+
+  .slot-time {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .slot-time strong {
     font-weight: 700;
-    font-size: 0.95rem;
     color: #111827;
   }
 
-  .card-hall {
+  .slot-time span {
+    font-size: 0.82rem;
+    color: #6b7280;
+  }
+
+  .hall-pill {
     display: inline-block;
-    padding: 3px 8px;
+    padding: 4px 10px;
     background: #e0f2fe;
     color: #0369a1;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
     border-radius: 999px;
   }
 
-  .card-movie {
+  .movie-title {
     font-weight: 700;
     font-size: 0.95rem;
     color: #1f2937;
-    margin-bottom: 4px;
-    line-height: 1.3;
+    line-height: 1.35;
   }
 
-  .card-cinema {
+  .cinema-name {
     font-size: 0.85rem;
     color: #6b7280;
-    margin-bottom: 10px;
   }
 
-  .card-main {
-    padding: 10px;
-    background: #f3f4f6;
-    border-radius: 6px;
-    margin-bottom: 10px;
+  .prediction-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 76px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.82rem;
   }
 
-  .card-label {
-    font-size: 0.75rem;
-    color: #6b7280;
-    text-transform: uppercase;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-
-  .card-value {
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: #1f2937;
-  }
-
-  .card-bar {
-    width: 100%;
+  .occupancy-bar {
     height: 8px;
+    width: 100%;
     border-radius: 999px;
     background: #e5e7eb;
     overflow: hidden;
-    margin-bottom: 6px;
   }
 
-  .card-fill {
+  .occupancy-bar-fill {
     height: 100%;
     border-radius: inherit;
   }
 
-  .card-occupancy {
+  .occupancy-text {
+    font-size: 0.85rem;
+    color: #4b5563;
+    text-align: right;
+  }
+
+  .run-note {
+    font-size: 0.82rem;
+    color: #6b7280;
+    text-align: right;
+  }
+
+  .date-footer {
     display: flex;
     justify-content: space-between;
-    font-size: 0.85rem;
     color: #6b7280;
+    font-size: 0.83rem;
   }
 
   .last-update {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     color: #9ca3af;
-    margin-top: 8px;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 8px;
   }
 
   .empty-state {
-    padding: 32px 16px;
+    padding: 36px 16px;
     text-align: center;
     color: #6b7280;
     background: #f9fafb;
-    border-radius: 8px;
+    border-radius: 14px;
+    border: 1px dashed #d1d5db;
   }
 
   @media (max-width: 768px) {
-    .forecast-grid {
-      grid-template-columns: 1fr;
+    .forecast-header,
+    .date-group-header,
+    .date-footer {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .forecast-summary {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .forecast-table {
+      display: block;
+      overflow-x: auto;
     }
   }
 </style>
@@ -156,88 +250,117 @@
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <div>
         <h1>Прогноз завантаженості (7 днів)</h1>
-        <p>Очікувана кількість глядачів за фільмом, часом показу і днем тижня</p>
+        <p>Таблиця прогнозів, згрупована по датах показу</p>
       </div>
-      <div>
+      <div class="forecast-toolbar">
         <%= button_to "🔄 Оновити прогнози (Ручний запуск)", run_forecasts_path, method: :post, class: "px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition duration-200" %>
+        <% if latest_run %>
+          <div class="run-note">Останній запуск: <%= latest_run.run_at.strftime("%d/%m %H:%M") %></div>
+        <% end %>
       </div>
     </div>
   </div>
 
   <% if latest_run && latest_forecasts.any? %>
-    <div class="forecast-grid" id="forecast-grid">
-      <% latest_forecasts.sort_by(&:showtime_at).each do |forecast| %>
-        <% occupancy = forecast_occupancy_pct(forecast) %>
-        <% bar_color = forecast_occupancy_color(occupancy) %>
-        <% title = forecast_movie_title(forecast) %>
-        <% exact_showtime = forecast_showtime_for(forecast) %>
-        <% time_label = forecast.showtime_at.strftime("%H:%M") %>
-        <% if exact_showtime && exact_showtime.movie&.duration.present? %>
-          <% ends_at = exact_showtime.start_time + exact_showtime.movie.duration.minutes %>
-          <% time_label = "#{exact_showtime.start_time.strftime('%H:%M')} - #{ends_at.strftime('%H:%M')}" %>
-        <% end %>
-
-        <div class="forecast-card">
-          <div class="card-header">
-            <div class="card-time"><%= time_label %></div>
-            <span class="card-hall"><%= forecast.hall&.name || "Зал" %></span>
-          </div>
-
-          <div class="card-movie"><%= title %></div>
-          <div class="card-cinema"><%= forecast.hall&.cinema&.name || "Кінотеатр" %></div>
-
-          <div class="card-main">
-            <div class="card-label">Очікувано</div>
-            <div class="card-value">
-              <%= forecast.predicted_tickets.to_f.round(0).to_i %> квитків
-            </div>
-          </div>
-
-          <div class="card-bar">
-            <div class="card-fill" style="width: <%= [occupancy, 100].min %>%; background: <%= bar_color %>;"></div>
-          </div>
-
-          <div class="card-occupancy">
-            <span><%= forecast.showtime_at.strftime("%d/%m") %></span>
-            <span><%= occupancy.round(0).to_i %>% залу</span>
-          </div>
-
-          <div class="last-update">
-            <%= latest_run.run_at.strftime("%d/%m %H:%M") %>
-          </div>
-        </div>
-      <% end %>
+    <div class="forecast-summary">
+      <div class="summary-card">
+        <div class="summary-label">Усього прогнозів</div>
+        <div class="summary-value"><%= latest_forecasts.size %></div>
+        <div class="summary-note">Сеансів у останньому запуску</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Прогноз квитків</div>
+        <div class="summary-value"><%= @total_predicted_tickets.to_f.round(0).to_i %></div>
+        <div class="summary-note">Сумарно на всі сеанси</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Середня заповненість</div>
+        <div class="summary-value"><%= @average_occupancy.to_f.round(1) %>%</div>
+        <div class="summary-note">По останньому запуску</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Очікувана виручка</div>
+        <div class="summary-value"><%= number_to_currency(@expected_revenue.to_f, unit: "₴", precision: 0) %></div>
+        <div class="summary-note">Оцінка за цінами showtime</div>
+      </div>
     </div>
 
-    <script>
-      (function() {
-        const gridEl = document.getElementById('forecast-grid');
-        if (!gridEl) return;
-        
-        function refreshForecasts() {
-          fetch(window.location.href, { headers: { 'Accept': 'text/html' } })
-            .then(r => r.text())
-            .then(html => {
-              const newDoc = new DOMParser().parseFromString(html, 'text/html');
-              const newGrid = newDoc.getElementById('forecast-grid');
-              if (newGrid) {
-                gridEl.innerHTML = newGrid.innerHTML;
-              }
-            })
-            .catch(err => console.log('Error:', err));
-        }
+    <% forecasts_by_date.sort_by { |date, _| date }.each do |date, forecasts| %>
+      <% date_forecasts = forecasts.sort_by(&:showtime_at) %>
+      <% date_total = date_forecasts.sum { |forecast| forecast.predicted_tickets.to_f } %>
+      <% date_avg = date_forecasts.any? ? (date_forecasts.sum { |forecast| forecast_occupancy_pct(forecast) } / date_forecasts.size) : 0.0 %>
 
-        // Обновлювати кожні 60 сек (1 хв)
-        setInterval(refreshForecasts, 60000);
+      <section class="date-group">
+        <div class="date-group-header">
+          <div>
+            <div class="date-title"><%= date.strftime("%A, %d %B %Y") %></div>
+            <div class="date-meta"><%= date_forecasts.size %> сеансів</div>
+          </div>
+          <div class="date-meta">
+            <div>Разом: <strong><%= date_total.round(0).to_i %></strong> квитків</div>
+            <div>Середня заповненість: <strong><%= date_avg.round(1) %>%</strong></div>
+          </div>
+        </div>
 
-        // Обновити при поверненні на вкладку
-        document.addEventListener('visibilitychange', function() {
-          if (!document.hidden) {
-            refreshForecasts();
-          }
-        });
-      })();
-    </script>
+        <table class="forecast-table">
+          <thead>
+            <tr>
+              <th>Час</th>
+              <th>Фільм</th>
+              <th>Зал</th>
+              <th style="text-align:right;">Прогноз</th>
+              <th style="width: 22%;">Заповненість</th>
+              <th style="text-align:right;">Ціна</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% date_forecasts.each do |forecast| %>
+              <% occupancy = forecast_occupancy_pct(forecast) %>
+              <% bar_color = forecast_occupancy_color(occupancy) %>
+              <% title = forecast_movie_title(forecast) %>
+              <% exact_showtime = forecast_showtime_for(forecast) %>
+              <% time_label = forecast.showtime_at.strftime("%H:%M") %>
+              <% if exact_showtime && exact_showtime.movie&.duration.present? %>
+                <% ends_at = exact_showtime.start_time + exact_showtime.movie.duration.minutes %>
+                <% time_label = "#{exact_showtime.start_time.strftime('%H:%M')} - #{ends_at.strftime('%H:%M')}" %>
+              <% end %>
+
+              <tr>
+                <td>
+                  <div class="slot-time">
+                    <strong><%= time_label %></strong>
+                    <span><%= forecast.showtime_at.strftime("%d/%m") %></span>
+                  </div>
+                </td>
+                <td>
+                  <div class="movie-title"><%= title %></div>
+                  <div class="cinema-name"><%= forecast.hall&.cinema&.name || "Кінотеатр" %></div>
+                </td>
+                <td><span class="hall-pill"><%= forecast.hall&.name || "Зал" %></span></td>
+                <td style="text-align:right;">
+                  <div style="font-weight: 800; font-size: 1rem;"><%= forecast.predicted_tickets.to_f.round(0).to_i %></div>
+                  <div style="font-size: 0.8rem; color: #6b7280;">квитків</div>
+                </td>
+                <td>
+                  <div class="occupancy-bar">
+                    <div class="occupancy-bar-fill" style="width: <%= [occupancy, 100].min %>%; background: <%= bar_color %>;"></div>
+                  </div>
+                  <div class="occupancy-text"><%= occupancy.round(0).to_i %>% залу</div>
+                </td>
+                <td style="text-align:right;">
+                  <span class="prediction-badge" style="background: <%= bar_color %>;"><%= number_to_currency(forecast.showtime&.price.to_f, unit: "₴", precision: 0) %></span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <div class="date-footer" style="padding: 12px 16px; border-top: 1px solid #eef2f7;">
+          <div>Оновлено: <%= latest_run.run_at.strftime("%d/%m %H:%M") %></div>
+          <div><%= date_forecasts.size %> рядків у таблиці</div>
+        </div>
+      </section>
+      <% end %>
 
   <% else %>
     <div class="empty-state">

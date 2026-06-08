@@ -284,6 +284,21 @@
           </div>
         </div>
 
+        <% if current_user.admin_or_manager? %>
+          <p class="helper-copy">Можна переключити зміну на інший кінотеатр. Поточна зміна буде автоматично завершена.</p>
+
+          <%= form_with url: workdays_path, local: true, method: :post, scope: :workday do |f| %>
+            <div class="form-group">
+              <%= f.label :cinema_id, "Переключити кінотеатр" %>
+              <%= f.collection_select :cinema_id, Cinema.where(company_id: current_user.company_id), :id, :name, { selected: current_workday.cinema_id } %>
+            </div>
+
+            <div class="button-group">
+              <%= f.submit "Переключити зміну", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        <% end %>
+
         <div class="button-group">
           <%= link_to "Завершити зміну", close_workday_path(current_workday), data: { turbo_method: :patch, turbo_confirm: "Ви впевнені, що хочете завершити зміну? Це згенерує фінальний звіт." }, class: "btn btn-danger" %>
         </div>

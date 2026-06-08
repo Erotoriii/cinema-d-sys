@@ -6,7 +6,10 @@ class ForecastsController < ApplicationController
     @latest_run = @runs.first
 
     if @latest_run
-      @latest_forecasts = @latest_run.forecasts.includes(:hall, :movie, showtime: :movie).order(:showtime_at).to_a
+      @latest_forecasts = scoped_forecasts(@latest_run.forecasts)
+                           .includes(:hall, :movie, showtime: :movie)
+                           .order(:showtime_at)
+                           .to_a
       @forecasts_by_date = @latest_forecasts.group_by { |forecast| forecast.showtime_at.to_date }
       @forecasts_by_movie = @latest_forecasts.group_by { |forecast| forecast.movie&.title || forecast.showtime&.movie&.title || "Без назви" }
 
@@ -40,12 +43,22 @@ class ForecastsController < ApplicationController
 
   def show
     @run = ForecastRun.find(params[:id])
-    @forecasts = @run.forecasts.includes(:hall, :movie, showtime: :movie).order(:showtime_at)
+    @forecasts = scoped_forecasts(@run.forecasts)
+                 .includes(:hall, :movie, showtime: :movie)
+                 .order(:showtime_at)
   end
 
   def run
     ForecastRunnerJob.perform_later(horizon_days: 7)
     flash[:notice] = "Прогнозування запущено у фоновому режимі. Будь ласка, зачекайте кілька хвилин та оновіть сторінку."
     redirect_to forecasts_path
+  end
+
+  private
+
+  def scoped_forecasts(relation)
+    return relation unless current_workday.present?
+
+    relation.joins(:hall).where(halls: { cinema_id: current_workday.cinema_id })
   end
 end

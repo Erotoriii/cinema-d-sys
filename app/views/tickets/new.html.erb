@@ -285,6 +285,53 @@
     margin-top: 0.5rem;
     letter-spacing: 1px;
   }
+
+  .forecast-box {
+    background: #ffffff;
+    border: 1px solid #c7d2fe;
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .forecast-title {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+    color: #1e3a8a;
+    font-weight: 700;
+  }
+
+  .forecast-main {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .forecast-track {
+    margin-top: 10px;
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .forecast-fill {
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .forecast-copy {
+    margin-top: 8px;
+    font-size: 0.86rem;
+    color: #475569;
+    line-height: 1.4;
+  }
+
+  .forecast-muted {
+    margin-top: 6px;
+    font-size: 0.78rem;
+    color: #64748b;
+  }
 </style>
 
 <div class="tickets-container">
@@ -359,8 +406,36 @@
       <% unavailable_tickets_count = @showtime.tickets.where.not(status: ['Available', 'available', 'cancelled', nil]).count %>
       <% available_seats_count = @seats.count - unavailable_tickets_count %>
       <% total_earned = sold_tickets_count * (@showtime.price || 0) %>
+      <% current_occupancy_pct = @seats.any? ? (sold_tickets_count.to_f / @seats.count * 100.0) : 0.0 %>
 
       <div class="stats-panel">
+        <% if @latest_forecast_for_showtime.present? %>
+          <% predicted_pct = @predicted_occupancy_pct.to_f %>
+          <% predicted_tickets = @predicted_tickets_count.to_i %>
+          <% occupancy_gap = (predicted_pct - current_occupancy_pct).round(1) %>
+          <div class="forecast-box">
+            <p class="forecast-title">Прогноз завантаженості залу</p>
+            <div class="forecast-main"><%= predicted_pct.round(1) %>%</div>
+            <div class="forecast-track">
+              <div class="forecast-fill" style="width: <%= [predicted_pct, 100].min %>%; background: <%= forecast_occupancy_color(predicted_pct) %>;"></div>
+            </div>
+            <div class="forecast-copy">
+              Очікується <strong><%= predicted_tickets %></strong> квитків • <%= forecast_occupancy_label(predicted_pct) %>
+            </div>
+            <div class="forecast-copy">
+              Зараз продано <strong><%= sold_tickets_count %></strong> квитків (<%= current_occupancy_pct.round(1) %>%), різниця до прогнозу: <strong><%= occupancy_gap >= 0 ? "+#{occupancy_gap}" : occupancy_gap %>%</strong>
+            </div>
+            <% if @forecast_generated_at.present? %>
+              <div class="forecast-muted">Оновлено: <%= l(@forecast_generated_at, format: :short) %></div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="forecast-box">
+            <p class="forecast-title">Прогноз завантаженості залу</p>
+            <div class="forecast-copy">Для цього сеансу поки немає прогнозу. Запустіть побудову прогнозів, щоб бачити очікуване навантаження під час продажу квитків.</div>
+          </div>
+        <% end %>
+
         <div class="stat-item">
           <div class="stat-value"><%= available_seats_count %></div>
           <div class="stat-label">Доступні місця</div>

@@ -3,39 +3,69 @@ class ForecastRunnerJob < ApplicationJob
 
   def perform(horizon_days: 7)
     run = ForecastRun.create!(run_at: Time.current, horizon_days: horizon_days, model: 'regression')
+    horizon_days = horizon_days.to_i
+    window_start = Time.current.beginning_of_day
+    window_end = (window_start + (horizon_days - 1).days).end_of_day
 
     Hall.find_each do |hall|
       capacity = hall.try(:capacity)&.to_i || hall.try(:seats_count)&.to_i || hall.seats.count || 0
       next if capacity <= 0
 
+      Rails.logger.info("FORECAST DEBUG: Processing Hall #{hall.id} with capacity #{capacity}")
+      
       rows = gather_training_rows_for(hall, capacity)
+      Rails.logger.info("FORECAST DEBUG: Hall #{hall.id} gathered #{rows.count} training rows")
       next if rows.empty?
 
       trainer = Forecasting::RegressionTrainer.new(rows)
-      model = trainer.train(ridge: 1.0)
+      model = trainer.train(ridge: 0.01)
       
-      upcoming_showtimes = hall.showtimes.where('start_time >= ? AND start_time <= ?', Time.current, Time.current + horizon_days.days)
+      Rails.logger.info("FORECAST DEBUG Hall #{hall.id}: Model nil? #{model.nil?}")
+      
+      if model.nil?
+        Rails.logger.info("FORECAST DEBUG Hall #{hall.id}: Model is nil! Skipping.")
+        next
+      end
+      
+      Rails.logger.info("FORECAST DEBUG Hall #{hall.id}: Coefs=#{model[:coefs].inspect}")
+      Rails.logger.info("FORECAST DEBUG Hall #{hall.id}: Features=#{model[:feature_names].inspect}")
+      
+      upcoming_showtimes = hall.showtimes.where('start_time >= ? AND start_time <= ?', window_start, window_end)
 
       upcoming_showtimes.each do |showtime|
         # Безпечно витягуємо фічі
         movie_pop = calculate_historical_occupancy(showtime.movie_id) || 0.15
-        days_release = [(showtime.start_time.to_date - (showtime.movie.created_at&.to_date || Date.today)).to_i, 0].max
-        is_wknd = showtime.start_time.saturday? || showtime.start_time.sunday? ? 1.0 : 0.0
-        is_eve = showtime.start_time.hour >= 18 ? 1.0 : 0.0
+        is_wknd = showtime.start_time.saturday? || showtime.start_time.sunday?
+        
+        hour = showtime.start_time.hour
+        is_morning = (hour >= 8 && hour < 12)
+        is_afternoon = (hour >= 12 && hour < 17)
+        is_evening = (hour >= 17)
+        slot_floor = minimum_floor_for_slot(hour)
 
         features = {
           movie_popularity: movie_pop,
-          days_since_release: days_release,
+          start_time: showtime.start_time,
+          movie_id: showtime.movie_id,
+          hall_id: showtime.hall_id,
+          release_date: movie_release_date_for(showtime.movie),
           is_weekend: is_wknd,
-          is_evening: is_eve
+          is_morning: is_morning,
+          is_afternoon: is_afternoon,
+          is_evening: is_evening
         }
 
-        # Отримуємо прогноз, не даємо впасти нижче 15% або піднятися вище 100%
-        occupancy = trainer.predict(model, features) || 0.15
-        occupancy = 0.15 if occupancy < 0.15
+        # Отримуємо прогноз, даємо нижню межу по слоту і верхню межу 100%
+        occupancy = trainer.predict(model, features) || slot_floor
+        occupancy = slot_floor if occupancy < slot_floor
         occupancy = 1.0 if occupancy > 1.0
 
         predicted_tickets = (occupancy * capacity).round
+        
+        # Debug: log prediction details for evening showtimes
+        if is_evening
+          Rails.logger.info("FORECAST DEBUG Hall #{hall.id} Showtime #{showtime.id}: hour=#{hour}, evening=#{is_evening}, occupancy=#{occupancy.round(3)}, tickets=#{predicted_tickets}")
+        end
 
         Forecast.create!(
           forecast_run: run,
@@ -59,14 +89,23 @@ class ForecastRunnerJob < ApplicationJob
       occupancy = (sold_tickets.to_f / capacity)
 
       movie_pop = calculate_historical_occupancy(showtime.movie_id) || 0.15
-      days_release = [(showtime.start_time.to_date - (showtime.movie.created_at&.to_date || Date.today)).to_i, 0].max
+      
+      hour = showtime.start_time.hour
+      is_morning = (hour >= 8 && hour < 12)
+      is_afternoon = (hour >= 12 && hour < 17)
+      is_evening = (hour >= 17)
       
       rows << {
         occupancy_pct: occupancy,
         movie_popularity: movie_pop,
-        days_since_release: days_release,
-        is_weekend: showtime.start_time.saturday? || showtime.start_time.sunday? ? 1.0 : 0.0,
-        is_evening: showtime.start_time.hour >= 18 ? 1.0 : 0.0
+        start_time: showtime.start_time,
+        movie_id: showtime.movie_id,
+        hall_id: showtime.hall_id,
+        release_date: movie_release_date_for(showtime.movie),
+        is_weekend: showtime.start_time.saturday? || showtime.start_time.sunday?,
+        is_morning: is_morning,
+        is_afternoon: is_afternoon,
+        is_evening: is_evening
       }
     end
     rows
@@ -88,5 +127,18 @@ class ForecastRunnerJob < ApplicationJob
     Rails.logger.info("FORECAST DEBUG: Фільм ID #{movie_id} | Квитків: #{total_tickets} | Місць загалом: #{total_capacity}")
     
     total_tickets.to_f / total_capacity
+  end
+
+  def movie_release_date_for(movie)
+    return nil if movie.nil?
+
+    movie.try(:release_date) || movie.created_at
+  end
+
+  def minimum_floor_for_slot(hour)
+    return 0.10 if hour >= 8 && hour < 12
+    return 0.12 if hour >= 12 && hour < 17
+
+    0.15
   end
 end

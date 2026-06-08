@@ -5,18 +5,7 @@ class ShowtimesController < ApplicationController
 
   # GET /showtimes
   def index
-    base_scope = if current_workday
-      # If user has an active shift, show only showtimes from that cinema
-      Showtime.joins(:hall).where(halls: { cinema_id: current_workday.cinema_id })
-    elsif current_user.admin_or_manager?
-      cinema_ids = current_user.company&.cinema_ids || []
-      # Admins and managers can see all showtimes ONLY FOR THEIR COMPANY
-      Showtime.joins(:hall).where(halls: { cinema_id: cinema_ids })
-    else
-      # Staff without active shift cannot view showtimes
-      Showtime.none
-      flash.now[:alert] = "Please start a shift first to view showtimes."
-    end
+    base_scope = scoped_showtimes
 
     day_boundary = Time.zone.today.beginning_of_day
     @showing_past_showtimes = current_user&.admin? && params[:past].present?
@@ -44,6 +33,12 @@ class ShowtimesController < ApplicationController
   # POST /showtimes
   def create
     @showtime = Showtime.new(showtime_params)
+
+    unless allowed_hall_ids.include?(@showtime.hall_id)
+      @showtime.errors.add(:hall_id, "is not available for the selected cinema scope")
+      render :new, status: :unprocessable_entity
+      return
+    end
 
     if @showtime.save
       redirect_to @showtime, notice: "Showtime was successfully created."
@@ -74,6 +69,12 @@ class ShowtimesController < ApplicationController
 
   # PATCH/PUT /showtimes/:id
   def update
+    unless allowed_hall_ids.include?(showtime_params[:hall_id].to_i)
+      @showtime.errors.add(:hall_id, "is not available for the selected cinema scope")
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     if @showtime.update(showtime_params)
       redirect_to @showtime, notice: "Showtime was successfully updated."
     else
@@ -90,7 +91,7 @@ class ShowtimesController < ApplicationController
   private
 
   def set_showtime
-    @showtime = Showtime.find(params[:id])
+    @showtime = scoped_showtimes.find(params[:id])
   end
 
   def showtime_params
@@ -103,7 +104,31 @@ class ShowtimesController < ApplicationController
 
   def load_form_collections
     @movies = Movie.where(deleted_at: nil, company_id: current_user.company_id).order(:title)
-    @halls = Hall.where(cinema_id: current_user.company&.cinema_ids).order(:name)
+    @halls = Hall.where(cinema_id: allowed_cinema_ids).order(:name)
+  end
+
+  def scoped_showtimes
+    if current_workday.present?
+      return Showtime.joins(:hall).where(halls: { cinema_id: current_workday.cinema_id })
+    end
+
+    if current_user.admin_or_manager?
+      return Showtime.joins(:hall).where(halls: { cinema_id: allowed_cinema_ids })
+    end
+
+    flash.now[:alert] = "Please start a shift first to view showtimes."
+    Showtime.none
+  end
+
+  def allowed_cinema_ids
+    return [] if current_user.company.nil?
+    return [current_workday.cinema_id] if current_workday.present?
+
+    current_user.company.cinema_ids
+  end
+
+  def allowed_hall_ids
+    @allowed_hall_ids ||= Hall.where(cinema_id: allowed_cinema_ids).pluck(:id)
   end
 
   def authorize_manager!

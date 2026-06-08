@@ -2,6 +2,7 @@ class Showtime < ApplicationRecord
   belongs_to :movie
   belongs_to :hall
   has_many :tickets, dependent: :destroy
+  has_many :forecasts, dependent: :destroy
 
   attr_accessor :batch_date, :batch_times_text
 

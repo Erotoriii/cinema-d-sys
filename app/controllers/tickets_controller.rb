@@ -14,6 +14,19 @@ class TicketsController < ApplicationController
     
     # Get all tickets for this showtime with their status
     @tickets_by_seat = Ticket.where(showtime_id: @showtime.id).index_by(&:seat_id)
+
+    @latest_forecast_for_showtime = Forecast
+      .joins(:forecast_run)
+      .includes(:forecast_run)
+      .where(showtime_id: @showtime.id)
+      .order('forecast_runs.run_at DESC')
+      .first
+
+    if @latest_forecast_for_showtime.present?
+      @predicted_occupancy_pct = @latest_forecast_for_showtime.predicted_fill_pct.to_f
+      @predicted_tickets_count = @latest_forecast_for_showtime.predicted_tickets.to_f.round
+      @forecast_generated_at = @latest_forecast_for_showtime.forecast_run&.run_at
+    end
   end
 
   # POST /tickets

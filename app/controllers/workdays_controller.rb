@@ -3,8 +3,18 @@ class WorkdaysController < ApplicationController
 
   # POST /workdays - Start a shift
   def create
-    cinema_id = workday_params[:cinema_id]
-    cinema = Cinema.find(cinema_id)
+    cinema = available_cinemas.find(workday_params[:cinema_id])
+
+    active_workday = current_user.workdays.where(end_time: nil).order(:start_time).last
+
+    if active_workday.present?
+      if active_workday.cinema_id == cinema.id
+        redirect_to root_path, notice: "Shift is already active at #{cinema.name}."
+        return
+      end
+
+      active_workday.close_shift!
+    end
 
     @workday = current_user.workdays.build(
       cinema: cinema,
@@ -25,6 +35,11 @@ class WorkdaysController < ApplicationController
         format.html { redirect_to root_path, alert: "Failed to start shift." }
         format.json { render json: { success: false, errors: @workday.errors.full_messages }, status: :unprocessable_entity }
       end
+    end
+  rescue ActiveRecord::RecordNotFound
+    respond_to do |format|
+      format.html { redirect_to root_path, alert: "Selected cinema is not available for your account." }
+      format.json { render json: { success: false, errors: ["Selected cinema is not available for your account."] }, status: :unprocessable_entity }
     end
   end
 
@@ -52,5 +67,12 @@ class WorkdaysController < ApplicationController
 
   def workday_params
     params.require(:workday).permit(:cinema_id)
+  end
+
+  def available_cinemas
+    company_id = current_user.company_id
+    return Cinema.none if company_id.blank?
+
+    Cinema.where(company_id: company_id)
   end
 end

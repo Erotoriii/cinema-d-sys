@@ -28,9 +28,17 @@ class ReportsController < ApplicationController
   private
 
   def scoped_reports
-    return Report.all if current_user.admin? && current_user.company.nil?
+    reports = if current_user.admin? && current_user.company.nil?
+      Report.all
+    else
+      Report.joins(workday: :cinema).where(cinemas: { company_id: current_user.company_id })
+    end
 
-    Report.joins(workday: :cinema).where(cinemas: { company_id: current_user.company_id })
+    if current_workday.present?
+      reports = reports.joins(:workday).where(workdays: { cinema_id: current_workday.cinema_id })
+    end
+
+    reports
   end
 
   def set_report

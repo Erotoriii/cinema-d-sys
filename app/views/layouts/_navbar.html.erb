@@ -1,159 +1,189 @@
 <style>
   nav.navbar {
-    background-color: #2c3e50;
-    padding: 0;
-    margin: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 16px 20px 0;
+    background: transparent;
   }
 
   nav.navbar .nav-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 14px 18px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #111827 0%, #1f2937 45%, #334155 100%);
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+    border: 1px solid rgba(148, 163, 184, 0.22);
     display: flex;
     align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
+    gap: 14px;
   }
 
   nav.navbar .nav-brand {
-    font-size: 24px;
-    font-weight: bold;
-    color: #ecf0f1;
-    margin-right: 40px;
     text-decoration: none;
-    transition: color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    color: #f8fafc;
+    min-width: 220px;
   }
 
-  nav.navbar .nav-brand:hover {
-    color: #3498db;
+  nav.navbar .brand-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+  }
+
+  nav.navbar .brand-subtitle {
+    margin-top: 2px;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgba(248, 250, 252, 0.65);
+  }
+
+  nav.navbar .nav-links,
+  nav.navbar .nav-auth {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   nav.navbar .nav-links {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 0;
+    flex: 1;
   }
 
-  nav.navbar .nav-links li {
-    margin: 0;
-  }
-
-  nav.navbar .nav-links a {
-    display: block;
-    padding: 16px 20px;
-    color: #ecf0f1;
+  nav.navbar .nav-links a,
+  nav.navbar .nav-auth a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: rgba(248, 250, 252, 0.9);
+    padding: 9px 14px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
   }
 
-  nav.navbar .nav-links a:hover {
-    background-color: #34495e;
-    color: #3498db;
+  nav.navbar .nav-links a:hover,
+  nav.navbar .nav-auth a:hover {
+    transform: translateY(-1px);
+    background: rgba(148, 163, 184, 0.16);
+    border-color: rgba(148, 163, 184, 0.32);
   }
 
   nav.navbar .nav-links a.active {
-    background-color: #3498db;
-    color: white;
-  }
-
-  nav.navbar .nav-spacer {
-    margin-left: auto;
+    background: rgba(37, 99, 235, 0.96);
+    border-color: rgba(96, 165, 250, 0.9);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
   }
 
   nav.navbar .nav-auth {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 0;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  nav.navbar .user-welcome,
+  nav.navbar .workday-pill {
+    display: inline-flex;
     align-items: center;
+    padding: 9px 14px;
+    border-radius: 999px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    color: rgba(248, 250, 252, 0.9);
+    background: rgba(15, 23, 42, 0.24);
   }
 
-  nav.navbar .nav-auth li {
-    margin: 0;
+  nav.navbar .workday-pill {
+    background: rgba(22, 163, 74, 0.16);
+    border-color: rgba(74, 222, 128, 0.46);
+    color: #dcfce7;
+    font-weight: 700;
   }
 
-  nav.navbar .nav-auth a {
-    display: block;
-    padding: 16px 20px;
-    color: #ecf0f1;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background-color 0.3s ease, color 0.3s ease;
-  }
-
-  nav.navbar .nav-auth a:hover {
-    background-color: #34495e;
-    color: #3498db;
-  }
-
-  nav.navbar .nav-auth .user-welcome {
-    display: block;
-    padding: 16px 20px;
-    color: #ecf0f1;
-    font-size: 14px;
-    font-weight: 500;
-  }
-
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     nav.navbar .nav-container {
-      padding: 0 10px;
       flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    nav.navbar .nav-links {
+      flex-basis: 100%;
+      order: 3;
+      padding-top: 2px;
+    }
+
+    nav.navbar .nav-auth {
+      order: 2;
+      margin-left: 0;
+    }
+  }
+
+  @media (max-width: 700px) {
+    nav.navbar {
+      padding: 10px 10px 0;
+    }
+
+    nav.navbar .nav-container {
+      border-radius: 16px;
+      padding: 12px;
     }
 
     nav.navbar .nav-brand {
-      font-size: 18px;
-      margin-right: 20px;
+      min-width: 0;
     }
 
-    nav.navbar .nav-links a {
-      padding: 12px 15px;
-      font-size: 12px;
+    nav.navbar .brand-title {
+      font-size: 0.98rem;
     }
 
-    nav.navbar .nav-spacer {
-      margin-left: 0;
+    nav.navbar .brand-subtitle {
+      font-size: 0.68rem;
     }
 
-    nav.navbar .nav-auth a {
-      padding: 12px 15px;
-      font-size: 12px;
-    }
-
-    nav.navbar .nav-auth .user-welcome {
-      padding: 12px 15px;
-      font-size: 12px;
+    nav.navbar .nav-links a,
+    nav.navbar .nav-auth a,
+    nav.navbar .user-welcome,
+    nav.navbar .workday-pill {
+      font-size: 0.8rem;
+      padding: 8px 12px;
     }
   }
 </style>
 
 <nav class="navbar">
   <div class="nav-container">
-    <a href="<%= root_path %>" class="nav-brand">Кінотеатральна Система</a>
-    <ul class="nav-links">
-      <li><a href="<%= root_path %>" class="<%= 'active' if current_page?(root_path) %>">Головна</a></li>
-      <li><a href="<%= movies_path %>" class="<%= 'active' if current_page?(movies_path) %>">Фільми</a></li>
-      <li><a href="<%= showtimes_path %>" class="<%= 'active' if current_page?(showtimes_path) %>">Розклад</a></li>
-      <li><a href="<%= products_path %>" class="<%= 'active' if current_page?(products_path) %>">Продукти</a></li>
-      <% if user_signed_in? && current_user.admin_or_manager? %>
-        <li><a href="<%= reports_path %>" class="<%= 'active' if current_page?(reports_path) %>">Звіти</a></li>
-      <% end %>
+    <a href="<%= root_path %>" class="nav-brand">
+      <span class="brand-title">Кінотеатральна Система</span>
+      <span class="brand-subtitle">операційна панель</span>
+    </a>
+    <% if user_signed_in? %>
+      <ul class="nav-links">
+        <li><a href="<%= root_path %>" class="<%= 'active' if current_page?(root_path) %>">Головна</a></li>
+        <li><a href="<%= movies_path %>" class="<%= 'active' if current_page?(movies_path) %>">Фільми</a></li>
+        <li><a href="<%= showtimes_path %>" class="<%= 'active' if current_page?(showtimes_path) %>">Розклад</a></li>
+        <li><a href="<%= products_path %>" class="<%= 'active' if current_page?(products_path) %>">Продукти</a></li>
+        <% if current_user.admin_or_manager? %>
+          <li><a href="<%= reports_path %>" class="<%= 'active' if current_page?(reports_path) %>">Звіти</a></li>
+        <% end %>
 
-      <% if user_signed_in? && current_user.admin? %>
-        <li><a href="<%= cinemas_path %>" class="<%= 'active' if current_page?(cinemas_path) %>">Кінотеатри</a></li>
-        <li><a href="<%= halls_path %>" class="<%= 'active' if current_page?(halls_path) %>">Зали</a></li>
-        <li><a href="<%= users_path %>" class="<%= 'active' if current_page?(users_path) %>">Управління персоналом</a></li>
-      <% end %>
-    </ul>
-    <div class="nav-spacer"></div>
-    <ul class="nav-auth">
-      <% if user_signed_in? %>
+        <% if current_user.admin? %>
+          <li><a href="<%= cinemas_path %>" class="<%= 'active' if current_page?(cinemas_path) %>">Кінотеатри</a></li>
+          <li><a href="<%= halls_path %>" class="<%= 'active' if current_page?(halls_path) %>">Зали</a></li>
+          <li><a href="<%= users_path %>" class="<%= 'active' if current_page?(users_path) %>">Управління персоналом</a></li>
+        <% end %>
+      </ul>
+
+      <ul class="nav-auth">
         <% if current_workday %>
-          <li class="user-welcome" style="background-color: #27ae60; color: #ecf0f1; padding: 16px 20px; border-radius: 4px;">
+          <li class="workday-pill">
             📍 Активна зміна: <%= current_workday.cinema.name %>
           </li>
         <% end %>
@@ -163,10 +193,7 @@
         <li>
           <%= link_to "Вихід", destroy_user_session_path, data: { turbo_method: :delete }, method: :delete %>
         </li>
-      <% else %>
-        <li><a href="<%= new_user_session_path %>">Вхід</a></li>
-        <li><a href="<%= new_user_registration_path %>">Реєстрація</a></li>
-      <% end %>
-    </ul>
+      </ul>
+    <% end %>
   </div>
 </nav>

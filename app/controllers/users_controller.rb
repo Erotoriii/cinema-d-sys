@@ -12,11 +12,11 @@ class UsersController < ApplicationController
     @user = User.new
   end
 
-# Create a new user action.
+  # Create a new user action.
   # 1. Initialize user with user_params.
   # 2. Assign current_user's company_id to the new user.
   # 3. Check the role: if 'admin', use the email from params.
-  # 4. If not 'admin', dynamically set the email as: params[:user][:username] + "@" + current_user.company.domain_prefix + ".ua".
+  # 4. If not 'admin', dynamically set the email as: params[:user][:username] + "@" + current_user.company.domain_prefix.
   # 5. Save the user. If successful, redirect to users_path with a notice. Else, render :new.
   def create
     @user = User.new(user_params)
@@ -25,7 +25,7 @@ class UsersController < ApplicationController
     if @user.role == 'admin'
       @user.email = params[:user][:email]
     else
-      @user.email = "#{params[:user][:username]}@#{current_user.company.domain_prefix}.ua"
+      @user.email = "#{params[:user][:username]}@#{current_user.company.domain_prefix}"
     end
 
     if @user.save
