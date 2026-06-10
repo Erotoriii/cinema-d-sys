@@ -352,9 +352,10 @@
         <div class="screen">ЕКРАН</div>
       </div>
 
-      <%= form_with url: tickets_path, method: :post, local: true, class: "ticket-form" do |form| %>
+      <%= form_with url: tickets_path, method: :post, local: true, class: "ticket-form", data: { turbo: false } do |form| %>
     <!-- Hidden field for showtime_id - MUST be nested under 'ticket' -->
     <%= hidden_field_tag "ticket[showtime_id]", @showtime.id %>
+    <%= hidden_field_tag "ticket[generate_pdf]", "0", id: "generate-pdf-flag" %>
 
     <div class="seat-map">
       <div class="seat-grid" style="grid-template-columns: repeat(<%= @hall.seats_per_row %>, 1fr); gap: 8px;">
@@ -395,7 +396,7 @@
 
     <div class="actions">
       <p id="total-price-display" style="margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600;">Загальна сума: 0 UAH</p>
-      <%= form.submit "Продати вибрані квитки", class: "btn btn-primary" %>
+      <%= form.submit "Продати вибрані квитки", class: "btn btn-primary", id: "sell-tickets-submit" %>
       <%= link_to "Назад до сеансів", showtimes_path, class: "btn btn-secondary" %>
     </div>
       <% end %>
@@ -453,6 +454,29 @@
   </div>
 </div>
 
+<div id="payment-modal" class="payment-modal hidden" aria-hidden="true">
+  <div class="payment-modal__backdrop" data-close-payment-modal="true"></div>
+  <div class="payment-modal__card" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title">
+    <h3 id="payment-modal-title">Очікується оплата</h3>
+    <p class="payment-modal__copy">Перевірте обрані місця перед підтвердженням. Після оплати буде згенеровано PDF з квитками.</p>
+    <div class="payment-modal__summary">
+      <div>
+        <span>Кількість місць</span>
+        <strong id="payment-selected-count">0</strong>
+      </div>
+      <div>
+        <span>Сума до оплати</span>
+        <strong id="payment-total-amount">0 UAH</strong>
+      </div>
+    </div>
+    <p id="payment-modal-status" class="payment-modal__status">Ініціалізація платежу...</p>
+    <div class="payment-modal__actions">
+      <button type="button" class="btn btn-secondary" id="payment-cancel-btn">Скасувати</button>
+      <button type="button" class="btn btn-primary" id="payment-confirm-btn" disabled>Підтвердити оплату</button>
+    </div>
+  </div>
+</div>
+
 <!-- Seat Right-Click Context Menu -->
 <div id="seat-context-menu" class="context-menu" style="display: none; position: fixed; z-index: 1000;">
   <div class="context-menu-item" data-action="cancelled">Скасувати місце</div>
@@ -462,18 +486,108 @@
 
 <script>
   document.addEventListener('turbo:load', function() {
+    const ticketForm = document.querySelector('.ticket-form');
+    const generatePdfFlag = document.getElementById('generate-pdf-flag');
+    const paymentModal = document.getElementById('payment-modal');
+    const paymentStatus = document.getElementById('payment-modal-status');
+    const paymentSelectedCount = document.getElementById('payment-selected-count');
+    const paymentTotalAmount = document.getElementById('payment-total-amount');
+    const paymentCancelBtn = document.getElementById('payment-cancel-btn');
+    const paymentConfirmBtn = document.getElementById('payment-confirm-btn');
     const seatCheckboxes = document.querySelectorAll('input[name="ticket[seat_ids][]"]');
     const totalPriceDisplay = document.getElementById('total-price-display');
     const ticketPrice = <%= @showtime.price.to_f %>;
     const contextMenu = document.getElementById('seat-context-menu');
     let currentSeatId = null;
     let currentTicketId = null;
+    let paymentConfirmed = false;
+    let paymentReadyTimer = null;
+
+    function selectedSeatsCount() {
+      return document.querySelectorAll('input[name="ticket[seat_ids][]"]:checked').length;
+    }
+
+    function closePaymentModal() {
+      if (!paymentModal) {
+        return;
+      }
+      paymentModal.classList.add('hidden');
+      paymentModal.setAttribute('aria-hidden', 'true');
+      if (paymentReadyTimer) {
+        clearTimeout(paymentReadyTimer);
+      }
+    }
+
+    function openPaymentModal() {
+      const count = selectedSeatsCount();
+      if (!paymentModal || count === 0) {
+        return;
+      }
+
+      paymentSelectedCount.textContent = count;
+      paymentTotalAmount.textContent = `${count * ticketPrice} UAH`;
+      paymentStatus.textContent = 'Очікуйте підтвердження платежу...';
+      paymentConfirmBtn.disabled = true;
+
+      paymentModal.classList.remove('hidden');
+      paymentModal.setAttribute('aria-hidden', 'false');
+
+      paymentReadyTimer = setTimeout(function() {
+        paymentStatus.textContent = 'Оплату можна підтвердити';
+        paymentConfirmBtn.disabled = false;
+      }, 900);
+    }
 
     function updateTotalPrice() {
-      const selectedCount = document.querySelectorAll('.seat-selected').length;
+      const selectedCount = selectedSeatsCount();
       if (totalPriceDisplay) {
         totalPriceDisplay.innerText = `Загальна сума: ${selectedCount * ticketPrice} UAH`;
       }
+    }
+
+    if (ticketForm) {
+      ticketForm.addEventListener('submit', function(event) {
+        if (paymentConfirmed) {
+          return;
+        }
+
+        const count = selectedSeatsCount();
+        if (count === 0) {
+          return;
+        }
+
+        event.preventDefault();
+        openPaymentModal();
+      });
+    }
+
+    if (paymentCancelBtn) {
+      paymentCancelBtn.addEventListener('click', function() {
+        closePaymentModal();
+      });
+    }
+
+    if (paymentConfirmBtn) {
+      paymentConfirmBtn.addEventListener('click', function() {
+        if (!ticketForm) {
+          return;
+        }
+        paymentConfirmBtn.disabled = true;
+        paymentConfirmed = true;
+        if (generatePdfFlag) {
+          generatePdfFlag.value = '1';
+        }
+        closePaymentModal();
+        ticketForm.submit();
+      });
+    }
+
+    if (paymentModal) {
+      paymentModal.addEventListener('click', function(event) {
+        if (event.target.closest('[data-close-payment-modal="true"]')) {
+          closePaymentModal();
+        }
+      });
     }
 
     seatCheckboxes.forEach(function(checkbox) {
@@ -515,6 +629,7 @@
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         contextMenu.style.display = 'none';
+        closePaymentModal();
       }
     });
 
@@ -560,6 +675,82 @@
 </script>
 
 <style>
+  .payment-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .payment-modal.hidden {
+    display: none;
+  }
+
+  .payment-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+  }
+
+  .payment-modal__card {
+    position: relative;
+    z-index: 1;
+    width: min(460px, 100%);
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #dbe4ef;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
+    padding: 20px;
+  }
+
+  .payment-modal__card h3 {
+    margin: 0 0 8px;
+    color: #0f172a;
+  }
+
+  .payment-modal__copy {
+    margin: 0;
+    color: #475569;
+    line-height: 1.45;
+  }
+
+  .payment-modal__summary {
+    margin-top: 14px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .payment-modal__summary div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #0f172a;
+  }
+
+  .payment-modal__summary span {
+    color: #64748b;
+  }
+
+  .payment-modal__status {
+    margin: 12px 0 0;
+    color: #0f766e;
+    font-weight: 600;
+  }
+
+  .payment-modal__actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
   .context-menu {
     position: fixed;
     background-color: #f3f3f3;

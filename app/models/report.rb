@@ -27,6 +27,14 @@ class Report < ApplicationRecord
     STATUS_LABELS[status] || status.to_s.humanize
   end
 
+  def products_revenue
+    @products_revenue ||= products_rows.sum { |row| row["income"].to_f }
+  end
+
+  def tickets_revenue
+    @tickets_revenue ||= (total_revenue.to_f - products_revenue)
+  end
+
   private
 
   def set_default_status

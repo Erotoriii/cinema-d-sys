@@ -412,7 +412,7 @@ end %>
                       <% end %>
                     </div>
 
-                    <% if current_workday %>
+                    <% if current_workday || (user_signed_in? && current_user.admin_or_manager?) %>
                       <div class="sell-wrap">
                         <%= link_to "Продати квиток", new_ticket_path(showtime_id: showtime.id), class: "btn-cta w-full" %>
                       </div>
@@ -430,47 +430,5 @@ end %>
       Поки що немає сеансів.
     </div>
   <% end %>
-</div><h1>Розклад сеансів</h1>
-
-<% if user_signed_in? && current_user.admin_or_manager? %>
-  <%= link_to "Додати новий сеанс", new_showtime_path, class: "btn btn-primary" %>
-<% end %>
-
-<% if @showtimes.any? %>
-  <table>
-    <thead>
-      <tr>
-        <th>Дата</th>
-        <th>Час</th>
-        <th>Назва фільму</th>
-        <th>Зал</th>
-        <th>Кінотеатр</th>
-        <th>Дії</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @showtimes.each do |showtime| %>
-        <tr>
-          <td><%= showtime.start_time.strftime("%B %d, %Y") %></td>
-          <td><%= showtime.start_time.strftime("%H:%M") %></td>
-          <td><%= showtime.movie&.title %></td>
-          <td><%= showtime.hall&.name %></td>
-          <td><%= showtime.hall&.cinema&.name %></td>
-          <td>
-            <%= link_to "Переглянути", showtime_path(showtime) %>
-            <% if current_workday %>
-              <%= link_to "Продати квитки", new_ticket_path(showtime_id: showtime.id), class: "btn btn-success" %>
-            <% end %>
-            <% if user_signed_in? && current_user.admin_or_manager? %>
-              <%= link_to "Редагувати", edit_showtime_path(showtime) %>
-              <%= button_to "Видалити", showtime_path(showtime), method: :delete, data: { turbo_confirm: "Ви впевнені?" }, form: { style: "display:inline;" } %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p>Поки що немає сеансів.</p>
-<% end %>
+</div>
 

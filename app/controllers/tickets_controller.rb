@@ -1,7 +1,7 @@
 class TicketsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_ticket, only: [:show, :edit, :update, :destroy]
-  before_action :require_active_workday, only: [:create, :update, :destroy]
+  before_action :require_active_workday_or_admin, only: [:create, :update, :destroy]
 
   # GET /tickets/new?showtime_id=:showtime_id
   def new
@@ -11,7 +11,6 @@ class TicketsController < ApplicationController
     # Only count sold and pending tickets as occupied, cancelled tickets make seats available again
     @sold_seat_ids = Ticket.where(showtime_id: @showtime.id).where(status: ['sold', 'pending']).pluck(:seat_id)
     @movie = @showtime.movie
-    
     # Get all tickets for this showtime with their status
     @tickets_by_seat = Ticket.where(showtime_id: @showtime.id).index_by(&:seat_id)
 
@@ -31,18 +30,11 @@ class TicketsController < ApplicationController
 
   # POST /tickets
   def create
-    Rails.logger.debug "=== TICKET CREATE DEBUG ==="
-    Rails.logger.debug "params: #{params.inspect}"
-    Rails.logger.debug "tickets_params: #{tickets_params.inspect}"
     
     showtime_id = tickets_params[:showtime_id]
     seat_ids = tickets_params[:seat_ids] || []
+    generate_pdf = boolean_param?(tickets_params[:generate_pdf])
 
-    Rails.logger.debug "showtime_id: #{showtime_id.inspect}"
-    Rails.logger.debug "seat_ids: #{seat_ids.inspect}"
-    Rails.logger.debug "current_workday: #{current_workday.inspect}"
-
-    # Validate showtime_id and seat_ids
     if showtime_id.blank?
       flash[:alert] = "ERROR: showtime_id is missing from params"
       redirect_to root_path
@@ -66,16 +58,19 @@ class TicketsController < ApplicationController
     # Track created tickets and errors
     created_count = 0
     errors = []
+    sold_tickets = []
 
     seat_ids.each do |seat_id|
       ticket = Ticket.find_or_initialize_by(showtime_id: showtime_id, seat_id: seat_id)
-
       Rails.logger.debug "Creating ticket: #{ticket.inspect}"
-
-      ticket.update!(status: 'sold', workday_id: current_workday.id)
+      update_attrs = { status: 'sold' }
+      update_attrs[:workday_id] = current_workday.id if current_workday
+      
+      ticket.update!(update_attrs)
       if ticket.persisted?
         Rails.logger.info "Ticket saved for seat #{seat_id}"
         created_count += 1
+        sold_tickets << ticket
       end
     rescue ActiveRecord::RecordInvalid => e
       error_msg = e.record.errors.full_messages.join(', ')
@@ -95,6 +90,22 @@ class TicketsController < ApplicationController
       flash[:alert] = "No tickets sold. #{errors.join(', ')}"
     else
       flash[:alert] = "No seats selected."
+    end
+
+    if generate_pdf && sold_tickets.any?
+      showtime = Showtime.includes(:movie, :hall).find(showtime_id)
+      begin
+        pdf_data = TicketPdfGenerator.new(showtime: showtime, tickets: sold_tickets).render
+        send_data(
+          pdf_data,
+          filename: pdf_filename_for(showtime),
+          type: "application/pdf",
+          disposition: "attachment"
+        )
+        return
+      rescue TicketPdfGenerator::MissingDependencyError => e
+        flash[:alert] = "Квитки продано, але PDF тимчасово недоступний на цьому сервері."
+      end
     end
 
     # CRITICAL: Always redirect back to the seat map
@@ -178,17 +189,25 @@ class TicketsController < ApplicationController
   end
 
   def tickets_params
-    params.require(:ticket).permit(:showtime_id, seat_ids: [])
+    params.require(:ticket).permit(:showtime_id, :generate_pdf, seat_ids: [])
   end
 
   def ticket_update_params
     params.require(:ticket).permit(:seat_id, :status)
   end
 
-  def require_active_workday
-    unless current_workday
+  def require_active_workday_or_admin
+    unless current_workday || current_user.admin_or_manager?
       flash[:alert] = "No active shift. Please start your shift first."
       redirect_to root_path
     end
+  end
+
+  def boolean_param?(value)
+    ActiveModel::Type::Boolean.new.cast(value)
+  end
+
+  def pdf_filename_for(showtime)
+    "tickets_showtime_#{showtime.id}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.pdf"
   end
 end

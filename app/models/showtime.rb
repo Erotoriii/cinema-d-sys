@@ -35,6 +35,6 @@ class Showtime < ApplicationRecord
 
     return if conflict.blank?
 
-    errors.add(:start_time, "conflicts with existing showtime in this hall: #{conflict.movie&.title} at #{conflict.start_time.strftime('%d/%m %H:%M')}")
+    errors.add(:start_time, "конфліктує з існуючим сеансом у цьому залі: #{conflict.movie&.title} о #{conflict.start_time.strftime('%d/%m %H:%M')}")
   end
 end

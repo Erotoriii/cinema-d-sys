@@ -151,7 +151,13 @@ module Forecasting
                                     .order(start_time: :desc)
                                     .first
 
-      historical_showtime ? historical_showtime.tickets.count.to_f : 0.0
+      return 0.0 unless historical_showtime
+
+      hall_capacity = historical_showtime.hall&.capacity.to_i
+      return 0.0 if hall_capacity <= 0
+
+      sold_tickets = historical_showtime.tickets.where(status: %w[sold Sold]).count
+      sold_tickets.to_f / hall_capacity
     end
   end
 end

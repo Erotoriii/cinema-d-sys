@@ -18,11 +18,19 @@ class ReportsController < ApplicationController
   end
 
   def download
-    html = render_to_string(:download, layout: false)
-    send_data html,
-              filename: "report-#{@report.id}.html",
-              type: "text/html",
-              disposition: "attachment"
+    begin
+      pdf_data = ReportPdfGenerator.new(report: @report).render
+      send_data(
+        pdf_data,
+        filename: pdf_filename_for(@report),
+        type: "application/pdf",
+        disposition: "attachment"
+      )
+    rescue ReportPdfGenerator::MissingDependencyError => e
+      Rails.logger.error("PDF generation failed: #{e.message}")
+      flash[:alert] = "PDF генерація тимчасово недоступна на цьому сервері."
+      redirect_to report_path(@report)
+    end
   end
 
   private
@@ -47,5 +55,11 @@ class ReportsController < ApplicationController
 
   def report_params
     params.require(:report).permit(:status)
+  end
+
+  def pdf_filename_for(report)
+    cinema_name = report.cinema.name.parameterize
+    date = report.created_at.strftime("%Y%m%d")
+    "report_#{cinema_name}_#{date}_#{report.id}.pdf"
   end
 end
