@@ -26,7 +26,7 @@ Rails.application.routes.draw do
   end
   resources :tickets, only: [:new, :create, :show, :edit, :update, :destroy]
   resources :users, path: 'staff'
-  resources :products, only: [:index, :create, :destroy] do
+  resources :products, only: [:index, :create, :destroy, :edit, :update] do
     collection do
       patch :bulk_update
     end

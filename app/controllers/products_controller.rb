@@ -1,7 +1,8 @@
 class ProductsController < ApplicationController
   before_action :ensure_cinema_assigned, except: [:index]
   before_action :ensure_active_workday, only: [:destroy, :bulk_update]
-  before_action :set_product, only: [:destroy]
+  before_action :set_product, only: [:destroy, :edit, :update]
+  before_action :authorize_manager_or_admin!, only: [:edit, :update]
 
   def index
     @cinema_assigned = inventory_cinema.present?
@@ -26,6 +27,17 @@ class ProductsController < ApplicationController
   def destroy
     @product.destroy
     redirect_to products_path, notice: "Product was successfully deleted."
+  end
+
+  def edit
+  end
+
+  def update
+    if @product.update(product_params)
+      redirect_to products_path, notice: "Product was successfully updated."
+    else
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   def bulk_update
@@ -82,5 +94,9 @@ class ProductsController < ApplicationController
 
   def product_params
     params.require(:product).permit(:name, :price, :amount, :sold_amount)
+  end
+
+  def authorize_manager_or_admin!
+    redirect_to products_path, alert: "You are not authorized to edit products." unless current_user.admin_or_manager?
   end
 end

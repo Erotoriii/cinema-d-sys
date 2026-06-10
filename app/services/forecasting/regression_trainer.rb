@@ -10,9 +10,7 @@ module Forecasting
 
     # ridge: regularization strength (lambda). If nil or 0 -> plain OLS
     def train(ridge: 1.0)
-      # Minimal data requirement
       return nil if @rows.size < 6
-
       feature_names = self.class.feature_names
 
       x_raw = @rows.map do |row|
@@ -34,12 +32,9 @@ module Forecasting
         col.map { |v| (v - mean) / std }
       end
 
-      # reassemble rows with intercept
       x_rows = x_std.transpose.map { |r| [1.0] + r }
-
       x = Matrix.rows(x_rows)
       xt = x.transpose
-
       xtx = xt * x
 
       # regularize diagonal excluding intercept
@@ -63,11 +58,9 @@ module Forecasting
       intercept = beta_std[0]
       coefs = [intercept]
       beta_std.to_a[1..-1].each_with_index do |b, idx|
-        # original coef = b / std
         coefs << (b.to_f / stds[idx])
       end
 
-      # Adjust intercept to account for means/stds: intercept_orig = intercept - sum(coef_i * mean_i)
       intercept_adj = coefs[0].to_f
       coefs[1..-1].each_with_index do |coef, idx|
         intercept_adj -= coef.to_f * means[idx]
@@ -86,14 +79,13 @@ module Forecasting
     end
 
     def self.feature_names
-      %i[movie_popularity days_since_release lag_feature is_weekend is_morning is_afternoon is_evening]
+      %i[movie_popularity days_since_release lag_feature is_weekend is_morning is_afternoon is_evening day_of_week week_of_month is_holiday lag_2_weeks rolling_avg_7d]
     end
 
     private
 
     def feature_vector(row)
       row = row || {}
-
       {
         movie_popularity: row[:movie_popularity].to_f,
         days_since_release: days_since_release_for(row),
@@ -101,7 +93,12 @@ module Forecasting
         is_weekend: flag_value(row[:is_weekend]),
         is_morning: flag_value(row[:is_morning]),
         is_afternoon: flag_value(row[:is_afternoon]),
-        is_evening: flag_value(row[:is_evening])
+        is_evening: flag_value(row[:is_evening]),
+        day_of_week: row[:day_of_week].to_f,
+        week_of_month: row[:week_of_month].to_f,
+        is_holiday: flag_value(row[:is_holiday]),
+        lag_2_weeks: (row[:lag_2_weeks] || 0).to_f,
+        rolling_avg_7d: (row[:rolling_avg_7d] || 0.25).to_f
       }
     end
 
@@ -156,7 +153,7 @@ module Forecasting
       hall_capacity = historical_showtime.hall&.capacity.to_i
       return 0.0 if hall_capacity <= 0
 
-      sold_tickets = historical_showtime.tickets.where(status: %w[sold Sold]).count
+      sold_tickets = historical_showtime.tickets.where(status: %w[sold pending]).count
       sold_tickets.to_f / hall_capacity
     end
   end
