@@ -4,7 +4,10 @@ class UsersController < ApplicationController
 
   # GET /staff
   def index
-    @users = User.where(company_id: current_user.company_id).where.not(role: 'admin').order(:email)
+    @users = User.where(company_id: current_user.company_id)
+                  .where.not(role: 'admin')
+                  .select(:id, :email, :role, :cinema_id, :company_id, :created_at)
+                  .order(:email)
   end
 
   # GET /staff/new

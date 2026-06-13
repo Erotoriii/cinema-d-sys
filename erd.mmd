@@ -1,0 +1,161 @@
+erDiagram
+	direction TB
+	Cinema {
+		string address
+		string name
+	}
+	Company {
+		string domain_prefix
+		string name
+	}
+	Forecast {
+		decimal predicted_fill_pct
+		decimal predicted_tickets
+		datetime showtime_at
+	}
+	ForecastRun {
+		integer horizon_days
+		string model
+		text model_weights
+		text params
+		datetime run_at
+	}
+	Hall {
+		string name
+		integer rows
+		integer seats_per_row
+	}
+	Movie {
+		datetime deleted_at
+		text description
+		integer duration
+		string title
+	}
+	Product {
+		integer amount
+		string name
+		decimal price
+		integer sold_amount
+	}
+	Report {
+		text product_details
+		integer status
+		integer tickets_count
+		decimal total_revenue
+		decimal total_sales
+	}
+	Seat {
+		integer number
+		integer row
+		string status
+	}
+	Showtime {
+		decimal price
+		datetime start_time
+	}
+	"SolidQueue::BlockedExecution" {
+		string concurrency_key
+		datetime expires_at
+		integer priority
+		string queue_name
+	}
+	"SolidQueue::ClaimedExecution" {
+	}
+	"SolidQueue::FailedExecution" {
+		text error
+	}
+	"SolidQueue::Job" {
+		string active_job_id
+		text arguments
+		string class_name
+		string concurrency_key
+		datetime finished_at
+		integer priority
+		string queue_name
+		datetime scheduled_at
+	}
+	"SolidQueue::Pause" {
+		string queue_name
+	}
+	"SolidQueue::Process" {
+		string hostname
+		string kind
+		datetime last_heartbeat_at
+		text metadata
+		string name
+		integer pid
+	}
+	"SolidQueue::ReadyExecution" {
+		integer priority
+		string queue_name
+	}
+	"SolidQueue::RecurringExecution" {
+		datetime run_at
+	}
+	"SolidQueue::RecurringTask" {
+		text arguments
+		string class_name
+		string command
+		text description
+		string key
+		integer priority
+		string queue_name
+		string schedule
+		boolean static
+	}
+	"SolidQueue::ScheduledExecution" {
+		integer priority
+		string queue_name
+		datetime scheduled_at
+	}
+	"SolidQueue::Semaphore" {
+		datetime expires_at
+		integer value
+	}
+	Ticket {
+		string status
+	}
+	User {
+		string email
+		string encrypted_password
+		string name
+		datetime remember_created_at
+		datetime reset_password_sent_at
+		string reset_password_token
+		string role
+	}
+	Workday {
+		decimal bar_sales_total
+		datetime end_time
+		text product_snapshot
+		datetime start_time
+	}
+	"SolidQueue::RecurringTask" o|--}o "SolidQueue::RecurringExecution" : ""
+	"SolidQueue::Process" ||--}o "SolidQueue::ClaimedExecution" : ""
+	"SolidQueue::Process" o|--}o "SolidQueue::Process" : ""
+	"SolidQueue::Job" o|--|o "SolidQueue::RecurringExecution" : ""
+	"SolidQueue::Job" o|--|o "SolidQueue::FailedExecution" : ""
+	"SolidQueue::Job" o|--|o "SolidQueue::ScheduledExecution" : ""
+	"SolidQueue::Job" o|--|o "SolidQueue::BlockedExecution" : ""
+	"SolidQueue::Job" o|--|o "SolidQueue::ReadyExecution" : ""
+	"SolidQueue::Job" o|--|o "SolidQueue::ClaimedExecution" : ""
+	"SolidQueue::BlockedExecution" o|--|o "SolidQueue::Semaphore" : ""
+	User ||--}o Workday : ""
+	Cinema ||--}o Workday : ""
+	Workday ||--}o Ticket : ""
+	Workday ||--|o Report : ""
+	Company o|--}o User : ""
+	Cinema o|--}o User : ""
+	Showtime ||--}o Ticket : ""
+	Seat ||--}o Ticket : ""
+	Movie ||--}o Showtime : ""
+	Hall ||--}o Showtime : ""
+	Showtime o|--}o Forecast : ""
+	Hall ||--}o Seat : ""
+	Cinema ||--}o Product : ""
+	Company o|--}o Movie : ""
+	Cinema ||--}o Hall : ""
+	ForecastRun ||--}o Forecast : ""
+	Hall ||--}o Forecast : ""
+	Movie o|--}o Forecast : ""
+	Company ||--}o Cinema : ""

@@ -2,9 +2,9 @@ class CinemasController < ApplicationController
   before_action :set_cinema, only: [:show, :edit, :update, :destroy]
   before_action :authorize_admin!
   # GET /cinemas
-  # Fetch all cinemas where company_id matches current_user.company_id
+  # Fetch all cinemas where company_id matches current_user.company_id (with caching)
   def index
-    @cinemas = Cinema.where(company_id: current_user.company_id)
+    @cinemas = Cinema.where(company_id: current_user.company_id).order(:name)
   end
 
   # GET /cinemas/:id

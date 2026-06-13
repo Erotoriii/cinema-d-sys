@@ -1,7 +1,9 @@
 class ForecastAccuracyJob < ApplicationJob
   queue_as :default
 
-  def perform(days_back: 7)
+  def perform(forecast_run_id: nil, days_back: 7)
+    @forecast_run = ForecastRun.find(forecast_run_id) if forecast_run_id.present?
+    
     days_back    = days_back.to_i
     cutoff_start = (Time.current - days_back.days).beginning_of_day
     cutoff_end   = Time.current
@@ -75,6 +77,12 @@ class ForecastAccuracyJob < ApplicationJob
     unless all_errors.empty?
       global_mape = mape_for(all_errors)
       Rails.logger.info("FORECAST ACCURACY GLOBAL: MAPE=#{global_mape}% (n=#{all_errors.length} total)")
+      
+      # Зберігаємо MAPE до ForecastRun якщо він був передданий
+      if @forecast_run.present?
+        @forecast_run.update(global_mape: global_mape)
+        Rails.logger.info("FORECAST ACCURACY: MAPE=#{global_mape}% saved to ForecastRun #{@forecast_run.id}")
+      end
     end
 
     Rails.logger.info("=== END FORECAST ACCURACY REPORT ===")

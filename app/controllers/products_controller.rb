@@ -7,7 +7,7 @@ class ProductsController < ApplicationController
   def index
     @cinema_assigned = inventory_cinema.present?
     @active_workday = current_workday
-    @products = @cinema_assigned ? inventory_cinema.products.order(:created_at) : Product.none
+    @products = @cinema_assigned ? inventory_cinema.products.order(created_at: :desc) : Product.none
     @new_product = Product.new
   end
 
@@ -41,37 +41,16 @@ class ProductsController < ApplicationController
   end
 
   def bulk_update
-    ActiveRecord::Base.transaction do
-      total_bar_sales = BigDecimal('0')
+    result = ProductInventoryService.new(
+      cinema: inventory_cinema,
+      workday: current_workday
+    ).bulk_update(params.fetch(:products, {}))
 
-      params.fetch(:products, {}).values.each do |product_data|
-        next if product_data.blank?
-
-        product = inventory_cinema.products.find(product_data[:id])
-        sold_qty = product_data[:sold_qty].to_i
-        arrived_qty = product_data[:arrived_qty].to_i
-        next if sold_qty.zero? && arrived_qty.zero?
-
-        new_amount = product.amount + arrived_qty - sold_qty
-        raise ActiveRecord::RecordInvalid.new(product) if new_amount.negative?
-
-        new_sold_amount = product.sold_amount + sold_qty
-
-        product.update!(
-          amount: new_amount,
-          sold_amount: new_sold_amount
-        )
-
-        total_bar_sales += product.price.to_d * sold_qty
-      end
-
-      if total_bar_sales.positive?
-        current_workday.update!(bar_sales_total: current_workday.bar_sales_total.to_d + total_bar_sales)
-      end
+    if result[:success]
+      redirect_to products_path, notice: result[:message]
+    else
+      redirect_to products_path, alert: result[:message]
     end
-    redirect_to products_path, notice: "Inventory updated successfully."
-  rescue => e
-    redirect_to products_path, alert: "Error updating inventory: #{e.message}"
   end
 
   private
@@ -89,7 +68,7 @@ class ProductsController < ApplicationController
   end
 
   def inventory_cinema
-    current_workday&.cinema || current_user.cinema
+    @inventory_cinema ||= (current_workday&.cinema || current_user.cinema)
   end
 
   def product_params

@@ -2,13 +2,10 @@ require 'matrix'
 
 module Forecasting
   class RegressionTrainer
-    # rows: array of hashes with keys :occupancy_pct, :movie_popularity, :start_time, :movie_id, :hall_id, :release_date, :is_weekend, :is_morning, :is_afternoon, :is_evening
-    # occupancy_pct must be a float between 0.0 and 1.0 (not 0-100)
     def initialize(rows)
       @rows = rows
     end
 
-    # ridge: regularization strength (lambda). If nil or 0 -> plain OLS
     def train(ridge: 1.0)
       return nil if @rows.size < 6
       feature_names = self.class.feature_names
@@ -18,7 +15,6 @@ module Forecasting
       end
       y = Vector.elements(@rows.map { |r| r[:occupancy_pct].to_f })
 
-      # standardize features (mean/std)
       means = []
       stds = []
       x_std = x_raw.transpose.map do |col|
@@ -37,7 +33,6 @@ module Forecasting
       xt = x.transpose
       xtx = xt * x
 
-      # regularize diagonal excluding intercept
       if ridge && ridge.to_f != 0.0
         ridge_val = ridge.to_f
         mat = xtx.to_a
@@ -53,8 +48,6 @@ module Forecasting
         return nil
       end
 
-      # Convert standardized coefs back to original scale
-      # beta_std corresponds to intercept + standardized feature coefs
       intercept = beta_std[0]
       coefs = [intercept]
       beta_std.to_a[1..-1].each_with_index do |b, idx|
@@ -79,7 +72,9 @@ module Forecasting
     end
 
     def self.feature_names
-      %i[movie_popularity days_since_release lag_feature is_weekend is_morning is_afternoon is_evening day_of_week week_of_month is_holiday lag_2_weeks rolling_avg_7d]
+      %i[movie_popularity days_since_release lag_feature is_weekend is_morning
+       is_afternoon is_evening day_of_week week_of_month is_holiday 
+       lag_2_weeks rolling_avg_7d]
     end
 
     private

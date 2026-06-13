@@ -3,7 +3,7 @@ class MoviesController < ApplicationController
   before_action :authorize_manager!
   # GET /movies
   def index
-    @movies = Movie.where(company_id: current_user.company_id, deleted_at: nil)
+    @movies = Movie.where(company_id: current_user.company_id, deleted_at: nil).order(:title)
   end
 
   # GET /movies/:id

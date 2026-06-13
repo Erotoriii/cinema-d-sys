@@ -69,3 +69,7 @@ gem "devise", "~> 5.0"
 
 gem "tailwindcss-rails", "~> 4.4"
 gem "prawn", "~> 2.5"
+
+group :development do
+  gem 'rails-erd'
+end 

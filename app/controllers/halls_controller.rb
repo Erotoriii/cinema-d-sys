@@ -63,13 +63,14 @@ class HallsController < ApplicationController
   end
 
   def allowed_cinema_ids
-    return [] if current_user.company.nil?
-    return [current_workday.cinema_id] if current_workday.present?
-
-    current_user.company.cinema_ids
+    @allowed_cinema_ids ||= begin
+      return [] if current_user.company.nil?
+      return [current_workday.cinema_id] if current_workday.present?
+      current_user.company.cinema_ids
+    end
   end
 
   def set_available_cinemas
-    @available_cinemas = Cinema.where(id: allowed_cinema_ids)
+    @available_cinemas = Cinema.where(id: allowed_cinema_ids).order(:name)
   end
 end

@@ -3,7 +3,7 @@ class ReportsController < ApplicationController
   before_action :set_report, only: [:show, :update, :download]
 
   def index
-    @reports = scoped_reports.includes(workday: [:cinema, :user]).order(created_at: :desc)
+    @reports = scoped_reports.includes(workday: [:cinema, :user]).order(created_at: :desc).limit(100)
   end
 
   def show
@@ -36,17 +36,10 @@ class ReportsController < ApplicationController
   private
 
   def scoped_reports
-    reports = if current_user.admin? && current_user.company.nil?
-      Report.all
-    else
-      Report.joins(workday: :cinema).where(cinemas: { company_id: current_user.company_id })
-    end
-
-    if current_workday.present?
-      reports = reports.joins(:workday).where(workdays: { cinema_id: current_workday.cinema_id })
-    end
-
-    reports
+    ReportScopeService.new(
+      current_user: current_user,
+      current_workday: current_workday
+    ).scoped_reports
   end
 
   def set_report

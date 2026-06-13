@@ -22,9 +22,9 @@ class ApplicationController < ActionController::Base
     redirect_to root_path, alert: "У вас недостатньо прав для цієї дії." unless current_user&.admin_or_manager?
   end
 
-  # Returns the active workday (shift) for the current user
+  # Returns the active workday (shift) for the current user (memoized)
   def current_workday
-    @current_workday ||= current_user&.workdays&.where(end_time: nil)&.last
+    @current_workday ||= current_user&.workdays&.where(end_time: nil)&.order(start_time: :desc)&.first
   end
 
   # Changes to the importmap will invalidate the etag for HTML responses

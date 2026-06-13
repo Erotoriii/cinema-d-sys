@@ -2,6 +2,12 @@
   <h1>Запуск прогнозу #<%= @run.id %></h1>
   <p>Запущено: <%= @run.run_at.strftime("%d/%m/%Y %H:%M") %> — горизонт: <%= @run.horizon_days %> днів — модель: <%= @run.model %></p>
 
+  <% if (current_user.admin? || current_user.manager?) && @global_mape.present? %>
+    <div style="background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; margin: 12px 0;">
+      <strong>MAPE (Точність прогнозу):</strong> <%= @global_mape.round(1) %>%
+    </div>
+  <% end %>
+
   <% if @forecasts.any? %>
     <table style="width:100%; border-collapse:collapse; margin-top:12px;">
       <thead>

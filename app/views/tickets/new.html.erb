@@ -353,7 +353,6 @@
       </div>
 
       <%= form_with url: tickets_path, method: :post, local: true, class: "ticket-form", data: { turbo: false } do |form| %>
-    <!-- Hidden field for showtime_id - MUST be nested under 'ticket' -->
     <%= hidden_field_tag "ticket[showtime_id]", @showtime.id %>
     <%= hidden_field_tag "ticket[generate_pdf]", "0", id: "generate-pdf-flag" %>
 
@@ -477,7 +476,6 @@
   </div>
 </div>
 
-<!-- Seat Right-Click Context Menu -->
 <div id="seat-context-menu" class="context-menu" style="display: none; position: fixed; z-index: 1000;">
   <div class="context-menu-item" data-action="cancelled">Скасувати місце</div>
   <div class="context-menu-item" data-action="sold">Позначити як продане</div>
@@ -605,7 +603,6 @@
       });
     });
 
-    // Right-click context menu handler
     document.querySelectorAll('.seat-label[data-seat-id]').forEach(function(seatBtn) {
       seatBtn.addEventListener('contextmenu', function(e) {
         e.preventDefault();
@@ -617,7 +614,6 @@
       });
     });
 
-    // Hide context menu when clicking elsewhere
     document.addEventListener('click', function(e) {
       if (e.target.closest('.context-menu') || e.target.closest('[data-seat-id]')) {
         return;
@@ -625,7 +621,6 @@
       contextMenu.style.display = 'none';
     });
 
-    // Hide context menu on escape key
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         contextMenu.style.display = 'none';
@@ -633,7 +628,6 @@
       }
     });
 
-    // Context menu action handlers
     document.querySelectorAll('.context-menu-item').forEach(function(item) {
       item.addEventListener('click', function() {
         const action = item.getAttribute('data-action');

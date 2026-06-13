@@ -42,7 +42,7 @@
 
   .forecast-summary {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 12px;
     margin-bottom: 20px;
   }
@@ -283,6 +283,13 @@
         <div class="summary-value"><%= number_to_currency(@expected_revenue.to_f, unit: "₴", precision: 0) %></div>
         <div class="summary-note">Оцінка за цінами showtime</div>
       </div>
+      <% if @global_mape.present? && (current_user.admin? || current_user.manager?) %>
+        <div class="summary-card">
+          <div class="summary-label">MAPE</div>
+          <div class="summary-value"><%= @global_mape.round(1) %>%</div>
+          <div class="summary-note">Точність прогнозу</div>
+        </div>
+      <% end %>
     </div>
 
     <% forecasts_by_date.sort_by { |date, _| date }.each do |date, forecasts| %>

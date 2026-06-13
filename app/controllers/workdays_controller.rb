@@ -5,7 +5,7 @@ class WorkdaysController < ApplicationController
   def create
     cinema = available_cinemas.find(workday_params[:cinema_id])
 
-    active_workday = current_user.workdays.where(end_time: nil).order(:start_time).last
+    active_workday = current_user.workdays.where(end_time: nil).order(start_time: :desc).first
 
     if active_workday.present?
       if active_workday.cinema_id == cinema.id
@@ -70,9 +70,10 @@ class WorkdaysController < ApplicationController
   end
 
   def available_cinemas
-    company_id = current_user.company_id
-    return Cinema.none if company_id.blank?
-
-    Cinema.where(company_id: company_id)
+    @available_cinemas ||= begin
+      company_id = current_user.company_id
+      return Cinema.none if company_id.blank?
+      Cinema.where(company_id: company_id).order(:name)
+    end
   end
 end

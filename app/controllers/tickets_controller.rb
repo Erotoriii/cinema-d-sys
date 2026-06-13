@@ -1,51 +1,33 @@
 class TicketsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_ticket, only: [:show, :edit, :update, :destroy]
+  before_action :set_ticket, only: [:show, :edit]
   before_action :require_active_workday_or_admin, only: [:create, :update, :destroy]
 
-  # GET /tickets/new?showtime_id=:showtime_id
   def new
-    @showtime = Showtime.find(params[:showtime_id])
-    @hall = @showtime.hall
-    @seats = @hall.seats.order(:row, :number)
-    # Only count sold and pending tickets as occupied, cancelled tickets make seats available again
-    @sold_seat_ids = Ticket.where(showtime_id: @showtime.id).where(status: ['sold', 'pending']).pluck(:seat_id)
-    @movie = @showtime.movie
-    # Get all tickets for this showtime with their status
-    @tickets_by_seat = Ticket.where(showtime_id: @showtime.id).index_by(&:seat_id)
-
-    @latest_forecast_for_showtime = Forecast
-      .joins(:forecast_run)
-      .includes(:forecast_run)
-      .where(showtime_id: @showtime.id)
-      .order('forecast_runs.run_at DESC')
-      .first
-
-    if @latest_forecast_for_showtime.present?
-      @predicted_occupancy_pct = @latest_forecast_for_showtime.predicted_fill_pct.to_f
-      @predicted_tickets_count = @latest_forecast_for_showtime.predicted_tickets.to_f.round
-      @forecast_generated_at = @latest_forecast_for_showtime.forecast_run&.run_at
-    end
+    service_data = TicketShowService.new(params[:showtime_id]).load_data
+    
+    @showtime = service_data[:showtime]
+    @hall = service_data[:hall]
+    @seats = service_data[:seats]
+    @sold_seat_ids = service_data[:sold_seat_ids]
+    @movie = service_data[:movie]
+    @tickets_by_seat = service_data[:tickets_by_seat]
+    @latest_forecast_for_showtime = service_data[:latest_forecast]
+    
+    forecast_data = service_data[:forecast_data]
+    @predicted_occupancy_pct = forecast_data[:predicted_occupancy_pct]
+    @predicted_tickets_count = forecast_data[:predicted_tickets_count]
+    @forecast_generated_at = forecast_data[:forecast_generated_at]
   end
 
   # POST /tickets
   def create
-    
     showtime_id = tickets_params[:showtime_id]
     seat_ids = tickets_params[:seat_ids] || []
     generate_pdf = boolean_param?(tickets_params[:generate_pdf])
 
     if showtime_id.blank?
-      flash[:alert] = "ERROR: showtime_id is missing from params"
       redirect_to root_path
-      return
-    end
-
-    showtime = Showtime.find(showtime_id)
-
-    if showtime.start_time < Time.current && !current_user.admin?
-      flash[:alert] = "Тільки адміністратор може додавати квитки до минулих сеансів."
-      redirect_to new_ticket_path(showtime_id: showtime_id)
       return
     end
 
@@ -55,33 +37,95 @@ class TicketsController < ApplicationController
       return
     end
 
-    # Track created tickets and errors
-    created_count = 0
-    errors = []
-    sold_tickets = []
+    showtime = Showtime.find(showtime_id)
 
-    seat_ids.each do |seat_id|
-      ticket = Ticket.find_or_initialize_by(showtime_id: showtime_id, seat_id: seat_id)
-      Rails.logger.debug "Creating ticket: #{ticket.inspect}"
-      update_attrs = { status: 'sold' }
-      update_attrs[:workday_id] = current_workday.id if current_workday
+    result = TicketCreatorService.new(
+      showtime: showtime,
+      seat_ids: seat_ids,
+      workday: current_workday,
+      current_user: current_user
+    ).call
+
+    handle_ticket_creation_result(result, showtime, generate_pdf)
+  rescue TicketCreatorService::PermissionDenied => e
+    flash[:alert] = e.message
+    redirect_to new_ticket_path(showtime_id: showtime_id)
+  end
+
+  def show
+  end
+
+  def edit
+    hall = @ticket.showtime.hall
+    sold_seat_ids = @ticket.showtime.tickets.where.not(id: @ticket.id).pluck(:seat_id)
+    @available_seats = hall.seats.where.not(id: sold_seat_ids).order(:row, :number)
+    
+    render layout: false if request.xhr?
+  end
+
+  # PATCH/PUT /tickets/:id
+  def update
+    @ticket = Ticket.find(params[:id])
+    
+    Rails.logger.debug "=== TICKET UPDATE DEBUG ==="
+    Rails.logger.debug "params: #{params.inspect}"
+    Rails.logger.debug "ticket_update_params: #{ticket_update_params.inspect}"
+
+    service = TicketUpdateService.new(@ticket, ticket_update_params)
+    result = service.update!
+
+    if result[:success]
+      Rails.logger.debug "Update successful: #{result[:message]}"
       
-      ticket.update!(update_attrs)
-      if ticket.persisted?
-        Rails.logger.info "Ticket saved for seat #{seat_id}"
-        created_count += 1
-        sold_tickets << ticket
+      respond_to do |format|
+        format.json { render json: { success: true, message: result[:message], new_status: result[:new_status] } }
+        format.html do
+          flash[:notice] = result[:message]
+          redirect_to @ticket
+        end
       end
-    rescue ActiveRecord::RecordInvalid => e
-      error_msg = e.record.errors.full_messages.join(', ')
-      Rails.logger.error "TICKET SAVE ERROR for seat #{seat_id}: #{error_msg}"
-      errors << "Seat #{seat_id}: #{error_msg}"
+    else
+      Rails.logger.error "Update failed: #{result[:errors].join(', ')}"
+      
+      respond_to do |format|
+        format.json { render json: { success: false, errors: result[:errors] }, status: :unprocessable_entity }
+        format.html do
+          flash[:alert] = "Failed to update ticket: #{result[:errors].join(', ')}"
+          redirect_to edit_ticket_path(@ticket)
+        end
+      end
     end
+  end
 
-    Rails.logger.debug "=== TICKET CREATE SUMMARY ==="
-    Rails.logger.debug "Created: #{created_count}, Errors: #{errors.count}"
+  # DELETE /tickets/:id
+  def destroy
+    @ticket = Ticket.find(params[:id])
+    showtime_id = @ticket.showtime_id
+    @ticket.destroy
+    flash[:notice] = "Ticket deleted successfully"
+    redirect_to new_ticket_path(showtime_id: showtime_id)
+  end
 
-    # Build notification message
+  # Callback methods (must be public, before private)
+  def set_ticket
+    @ticket = Ticket.find(params[:id])
+  end
+
+  def require_active_workday_or_admin
+    unless current_workday || current_user.admin_or_manager?
+      flash[:alert] = "No active shift. Please start your shift first."
+      redirect_to root_path
+    end
+  end
+
+  private
+
+  def handle_ticket_creation_result(result, showtime, generate_pdf)
+    created_count = result[:created_count]
+    errors = result[:errors]
+    sold_tickets = result[:sold_tickets]
+
+
     if created_count > 0
       notice = "#{created_count} ticket(s) sold successfully"
       notice += " (Errors: #{errors.join(', ')})" if errors.any?
@@ -93,99 +137,26 @@ class TicketsController < ApplicationController
     end
 
     if generate_pdf && sold_tickets.any?
-      showtime = Showtime.includes(:movie, :hall).find(showtime_id)
-      begin
-        pdf_data = TicketPdfGenerator.new(showtime: showtime, tickets: sold_tickets).render
-        send_data(
-          pdf_data,
-          filename: pdf_filename_for(showtime),
-          type: "application/pdf",
-          disposition: "attachment"
-        )
-        return
-      rescue TicketPdfGenerator::MissingDependencyError => e
-        flash[:alert] = "Квитки продано, але PDF тимчасово недоступний на цьому сервері."
-      end
-    end
-
-    # CRITICAL: Always redirect back to the seat map
-    redirect_to new_ticket_path(showtime_id: showtime_id)
-  end
-
-  # GET /tickets/:id
-  def show
-  end
-
-  # GET /tickets/:id/edit
-  def edit
-    hall = @ticket.showtime.hall
-    sold_seat_ids = @ticket.showtime.tickets.where.not(id: @ticket.id).pluck(:seat_id)
-    @available_seats = hall.seats.where.not(id: sold_seat_ids).order(:row, :number)
-    
-    # When called via AJAX, render without layout
-    render layout: false if request.xhr?
-  end
-
-  # PATCH/PUT /tickets/:id
-  def update
-    Rails.logger.debug "=== TICKET UPDATE DEBUG ==="
-    Rails.logger.debug "params: #{params.inspect}"
-    Rails.logger.debug "ticket_update_params: #{ticket_update_params.inspect}"
-    
-    old_status = @ticket.status
-    old_seat_id = @ticket.seat_id
-    new_status = ticket_update_params[:status]
-    new_seat_id = ticket_update_params[:seat_id]
-
-    Rails.logger.debug "Updating ticket #{@ticket.id} from status #{old_status} to #{new_status}"
-
-    if @ticket.update(ticket_update_params)
-      message = "Ticket updated successfully"
-      
-      if old_seat_id != new_seat_id && new_seat_id.present?
-        old_seat = Seat.find(old_seat_id)
-        new_seat = Seat.find(new_seat_id)
-        message += ": seat changed from Row #{old_seat.row}, Seat #{old_seat.number} to Row #{new_seat.row}, Seat #{new_seat.number}"
-      end
-      
-      if old_status != new_status
-        message += ", status changed from #{old_status} to #{new_status}"
-      end
-      
-      Rails.logger.debug "Update successful: #{message}"
-      
-      respond_to do |format|
-        format.json { render json: { success: true, message: message, new_status: new_seat_id != old_seat_id && new_seat_id.present? ? 'moved' : new_status } }
-        format.html do
-          flash[:notice] = message
-          redirect_to @ticket
-        end
-      end
+      handle_pdf_generation(showtime, sold_tickets)
     else
-      Rails.logger.error "Update failed: #{@ticket.errors.full_messages.join(', ')}"
-      
-      respond_to do |format|
-        format.json { render json: { success: false, errors: @ticket.errors.full_messages }, status: :unprocessable_entity }
-        format.html do
-          flash[:alert] = "Failed to update ticket: #{@ticket.errors.full_messages.join(', ')}"
-          redirect_to edit_ticket_path(@ticket)
-        end
-      end
+      redirect_to new_ticket_path(showtime_id: showtime.id)
     end
   end
 
-  # DELETE /tickets/:id
-  def destroy
-    showtime_id = @ticket.showtime_id
-    @ticket.destroy
-    flash[:notice] = "Ticket deleted successfully"
-    redirect_to new_ticket_path(showtime_id: showtime_id)
-  end
-
-  private
-
-  def set_ticket
-    @ticket = Ticket.find(params[:id])
+  def handle_pdf_generation(showtime, sold_tickets)
+    showtime = Showtime.includes(:movie, :hall).find(showtime.id)
+    begin
+      pdf_data = TicketPdfGenerator.new(showtime: showtime, tickets: sold_tickets).render
+      send_data(
+        pdf_data,
+        filename: pdf_filename_for(showtime),
+        type: "application/pdf",
+        disposition: "attachment"
+      )
+    rescue TicketPdfGenerator::MissingDependencyError => e
+      flash[:alert] = "Квитки продано, але PDF тимчасово недоступний на цьому сервері."
+      redirect_to new_ticket_path(showtime_id: showtime.id)
+    end
   end
 
   def tickets_params
@@ -194,13 +165,6 @@ class TicketsController < ApplicationController
 
   def ticket_update_params
     params.require(:ticket).permit(:seat_id, :status)
-  end
-
-  def require_active_workday_or_admin
-    unless current_workday || current_user.admin_or_manager?
-      flash[:alert] = "No active shift. Please start your shift first."
-      redirect_to root_path
-    end
   end
 
   def boolean_param?(value)
